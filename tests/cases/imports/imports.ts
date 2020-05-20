@@ -15,7 +15,7 @@ import {MyClass as MyAlias, myFunction} from "./simpleExports"
 import MyDefaultClass, {anotherClass, aFunction as anotherFunction} from "./defaultExport"
 
 // import defaultExport, * as name from "module-name";
-
+import myDefaultClass2, * as myName2 from "./defaultExport2"
 
 // import "module-name";
 import "./simpleExports"

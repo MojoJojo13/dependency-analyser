@@ -1,22 +1,17 @@
-import * as ts from "typescript";
-import * as fs from "fs";
-import {ImportScanner} from "../../../src/importService";
 import * as chai from 'chai';
 import 'mocha';
 import {ImportDeclaration} from "../../../src/Declarations";
+import {DependencyAnalyser} from "../../../src/DependencyAnalyser";
 
 const expect = chai.expect;
+const fileName = __dirname + "\\imports.ts";
 
-const sourceFile = ts.createSourceFile(
-    'simpleImport.ts', // fileName
-    fs.readFileSync(__dirname + "\\imports.ts", 'utf8'), // sourceText
-    ts.ScriptTarget.Latest, // languageVersion
-    false
-);
+describe('Test Imports', () => {
 
-describe('Test imports', () => {
-
-    let importScanner = new ImportScanner(sourceFile);
+    let dependencyAnalyser = new DependencyAnalyser(fileName);
+    dependencyAnalyser.initDtsCreator();
+    dependencyAnalyser.scanAllFiles();
+    let importScanner = dependencyAnalyser.importScannerMap.get(fileName);
     let importMap = importScanner.importMap;
 
     it('import * as myName from "./simpleExports"' , () => {
@@ -71,6 +66,21 @@ describe('Test imports', () => {
         expect(
             (<ImportDeclaration>importMap.get("anotherFunction")).getImportSpecifiers()[2]
         ).to.equal("anotherFunction");
+    });
+
+    it('import myDefaultClass2, * as myName2 from "./defaultExport2"' , () => {
+        expect(
+            (<ImportDeclaration>importMap.get("myDefaultClass2")).getModuleSpecifier()
+        ).to.equal("./defaultExport2");
+        expect(
+            (<ImportDeclaration>importMap.get("myDefaultClass2")).getImportSpecifiers()[0]
+        ).to.equal("myDefaultClass2");
+        expect(
+            (<ImportDeclaration>importMap.get("myName2")).getModuleSpecifier()
+        ).to.equal("./defaultExport2");
+        expect(
+            (<ImportDeclaration>importMap.get("myName2")).getImportSpecifiers()[1]
+        ).to.equal("myName2");
     });
 
     // it('import "./simpleExports"' , () => {

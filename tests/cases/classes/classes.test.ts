@@ -2,26 +2,20 @@ import * as ts from "typescript";
 import {ImportScanner} from "../../../src/importService";
 import * as chai from 'chai';
 import 'mocha';
+import * as fs from "fs";
+import {DependencyAnalyser} from "../../../src/DependencyAnalyser";
 
 const expect = chai.expect;
+const fileName = __dirname + "\\imports.ts";
 
-const sourceText =
-    "import {MyClass} from \"./exports\"\n" +
-    "let myClass = new MyClass();\n" +
-    "myClass.doSomething();";
+describe('Test Class Stuff', () => {
 
-const sourceFile = ts.createSourceFile(
-    'simpleImport.ts', // fileName
-    sourceText, // sourceText
-    ts.ScriptTarget.Latest, // languageVersion
-    false
-);
-
-describe('My math library 1', () => {
+    let dependencyAnalyser = new DependencyAnalyser(fileName);
+    dependencyAnalyser.initDtsCreator();
+    dependencyAnalyser.scanAllFiles();
 
     it('should be able to add things correctly' , () => {
-        //expect().to.equal(7);
-        new ImportScanner(sourceFile).surfaceCountWrapper();
+
     });
 
 });

@@ -1,9 +1,14 @@
 import * as ts from "typescript";
+import * as fs from "fs";
+import * as path from "path";
 import {NamedImports, NamespaceImport} from "typescript";
+import {ExportScanner} from "./exportService";
 
 export class Declaration {
+
     protected _node: ts.Node;
     private _alias: string;
+    private _reference: string;
 
     constructor(node: ts.Node) {
         this.node = node;
@@ -73,9 +78,19 @@ export class Declaration {
     set alias(value: string) {
         this._alias = value;
     }
+
+    get reference(): string {
+        return this._reference;
+    }
+
+    set reference(value: string) {
+        this._reference = value;
+    }
 }
 
 export class ImportDeclaration extends Declaration {
+    private _fileName: string;
+    private _exportScanner: ExportScanner;
 
     getImportSpecifiers(): string[] {
         let importSpecifiers: string[] = [];
@@ -102,8 +117,7 @@ export class ImportDeclaration extends Declaration {
     }
 
     getModuleSpecifier(): string {
-        // @ts-ignore
-        return <string>this.node.moduleSpecifier.text;
+        return <string>this.node.moduleSpecifier["text"];
     }
 
     get node(): ts.ImportDeclaration {
@@ -112,6 +126,22 @@ export class ImportDeclaration extends Declaration {
 
     set node(value: ts.ImportDeclaration) {
         this._node = value;
+    }
+
+    get fileName(): string {
+        return this._fileName;
+    }
+
+    set fileName(value: string) {
+        this._fileName = value;
+    }
+
+    get exportScanner(): ExportScanner {
+        return this._exportScanner;
+    }
+
+    set exportScanner(value: ExportScanner) {
+        this._exportScanner = value;
     }
 }
 

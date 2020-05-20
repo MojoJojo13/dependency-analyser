@@ -4,7 +4,7 @@ import {ClassDeclaration} from "typescript";
 // import {ExportDeclaration, ExportSpecifier, NamedExports, NamespaceExport, SourceFile} from "typescript";
 
 export class ExportScanner {
-    exportNodesMap;
+    exportNodesMap = new Map();
 
     constructor() {
     }
@@ -25,7 +25,7 @@ export class ExportScanner {
                     let name = declaration.name.escapedText.toString();
 
                     if (name) {
-                        exportNodesMap.set(name, new Declaration(child));
+                        this.exportNodesMap.set(name, new Declaration(child));
                     } else {
                         console.log("Error: can't find name");
                     }
@@ -33,12 +33,14 @@ export class ExportScanner {
 
                 case ts.SyntaxKind.FirstStatement:
                     //child = <ts.VariableStatement>child; //FixMe
+                    // @ts-ignore
                     if (child.declarationList) {
                         let declaration = new Declaration(child);
 
+                        // @ts-ignore
                         child.declarationList.declarations.forEach(value => {
                             let name = value.name.escapedText.toString();
-                            exportNodesMap.set(name, declaration);
+                            this.exportNodesMap.set(name, declaration);
                         })
                     }
                     break;
@@ -82,7 +84,6 @@ export class ExportScanner {
                 // console.log("child", child);
             }
         });
-
         // console.log("exportNodesMap", exportNodesMap);
         exportNodesMap.forEach(function (value: Declaration, index: string) {
             console.log("~~~~~~~~~~~~~~~~~~~");
@@ -111,8 +112,11 @@ function _getMemberMap(node: ts.InterfaceDeclaration | ts.ClassDeclaration) {
             case ts.SyntaxKind.PropertyDeclaration:
                 membersMap.set(value.name.escapedText, new PropertyDeclaration(value));
                 break;
+            case ts.SyntaxKind.Constructor:
+                membersMap.set("constructor", new Constructor(value));
+                break;
             default:
-                console.log("Wtf is this?");
+                console.log("Wtf is this?", value.kind);
 
         }
     });
@@ -178,12 +182,14 @@ function findExportDeclarations(source: ts.SourceFile) {
                     exports.push(myExportDeclaration);
                 });
 
-            } else if (exportDeclaration.exportClause.kind === 262 /* NamespaceExport */) {
-                let namespaceExport = <ts.NamespaceExport>exportDeclaration.exportClause;
+            } else { // @ts-ignore
+                if (exportDeclaration.exportClause.kind === 262 /* NamespaceExport */) {
+                                let namespaceExport = <ts.NamespaceExport>exportDeclaration.exportClause;
 
-                console.log("namespaceExport", namespaceExport);
-            } else {
-                console.log("Can't handle this 0");
+                                console.log("namespaceExport", namespaceExport);
+                            } else {
+                                console.log("Can't handle this 0");
+                            }
             }
         }
 
@@ -227,6 +233,7 @@ class Declaration {
 
     getKind(): ts.SyntaxKind {
         if (this.node.kind === ts.SyntaxKind.FirstStatement) {
+            // @ts-ignore
             let declarations = this.node.declarationList.declarations;
             return declarations[declarations.length - 1].type.kind;
         }
@@ -250,17 +257,13 @@ class Declaration {
     }
 }
 
-class MethodDeclaration extends Declaration {
+class MethodDeclaration extends Declaration {}
 
-}
+class PropertyDeclaration extends Declaration {}
 
-class PropertyDeclaration extends Declaration {
+class MethodSignature extends Declaration {}
 
-}
-
-class MethodSignature extends Declaration {
-
-}
+class Constructor extends Declaration {}
 
 class MyExportDeclaration {
     private _identifier: string;

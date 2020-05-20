@@ -9,7 +9,6 @@ console.log('process.argv', process.argv.slice(2));
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-import {ImportDeclaration} from "./importDeclaration";
 import {ExportDeclaration} from "./exportDeclaration";
 import {FileHandler} from "./fileHandler";
 
@@ -30,14 +29,14 @@ const rootNode = ts.createSourceFile(
     false
 );
 
-let pathToModule1 = require.resolve("typescript");
-console.log("pathToModule1", pathToModule1);
-
-let pathToModule2 = require.resolve("fs");
-console.log("pathToModule2", pathToModule2);
-
-let pathToModule3 = require.resolve("./Declarations");
-console.log("pathToModule3", pathToModule3);
+// let pathToModule1 = require.resolve("typescript");
+// console.log("pathToModule1", pathToModule1);
+//
+// let pathToModule2 = require.resolve("fs");
+// console.log("pathToModule2", pathToModule2);
+//
+// let pathToModule3 = require.resolve("./Declarations");
+// console.log("pathToModule3", pathToModule3);
 
 // new FileHandler(sPath);
 

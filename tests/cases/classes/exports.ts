@@ -1,4 +1,11 @@
 export class MyClass {
     constructor() {}
-    doSomething = function () {}
+
+    doSomething = function (): MyClass {
+        return this;
+    }
+
+    static myStaticMethod = function() {
+        return "A";
+    }
 }
