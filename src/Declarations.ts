@@ -147,14 +147,8 @@ export class ImportDeclaration extends Declaration {
 
 //--- Export Service ---
 
-export class MethodDeclaration extends Declaration {
-
-}
-
-export class PropertyDeclaration extends Declaration {
-
-}
-
-export class MethodSignature extends Declaration {
-
-}
+// export class MethodDeclaration extends Declaration {}
+//
+// export class PropertyDeclaration extends Declaration {}
+//
+// export class MethodSignature extends Declaration {}

@@ -1,8 +1,5 @@
-import * as ts from "typescript";
-import {ImportScanner} from "../../../src/importService";
 import * as chai from 'chai';
 import 'mocha';
-import * as fs from "fs";
 import {DependencyAnalyser} from "../../../src/DependencyAnalyser";
 
 const expect = chai.expect;

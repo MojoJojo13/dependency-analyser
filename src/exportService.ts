@@ -115,8 +115,15 @@ function _getMemberMap(node: ts.InterfaceDeclaration | ts.ClassDeclaration) {
             case ts.SyntaxKind.Constructor:
                 membersMap.set("constructor", new Constructor(value));
                 break;
+            case ts.SyntaxKind.GetAccessor:
+                membersMap.set(value.name.escapedText, new GetAccessor(value));
+                break;
+            case ts.SyntaxKind.SetAccessor:
+                membersMap.set(value.name.escapedText, new SetAccessor(value));
+                break;
             default:
-                console.log("Wtf is this?", value.kind);
+                console.error(value);
+                throw `unknown SyntaxKind: ${ts.SyntaxKind[value.kind]} (${value.kind})`;
 
         }
     });
@@ -259,11 +266,40 @@ class Declaration {
 
 class MethodDeclaration extends Declaration {}
 
-class PropertyDeclaration extends Declaration {}
+export class PropertyDeclaration extends Declaration {
+    getType(): string {
+
+        // console.log("this.node", this.node);
+        let propertyDeclaration = <ts.PropertyDeclaration>this.node;
+        if (ts.isTypeNode(propertyDeclaration.type)) {
+            let typeNode = <ts.TypeNode> propertyDeclaration.type;
+
+            // @ts-ignore
+            if (typeNode.type) {
+                // @ts-ignore
+                return typeNode.type.typeName.escapedText.toString();
+            } else {
+                console.log(`Primitive type: ${ts.SyntaxKind[typeNode.kind]} (${typeNode.kind})`);
+                // switch (typeNode.kind) {
+                //     case ts.SyntaxKind.NumberKeyword:
+                //         return "number"; // number is not a reserved keyword :(
+                //
+                //     default:
+                //         console.log(`Primitive type: ${ts.SyntaxKind[typeNode.kind]} (${typeNode.kind})`);
+                //         break;
+                // }
+            }
+        }
+    }
+}
 
 class MethodSignature extends Declaration {}
 
 class Constructor extends Declaration {}
+
+class GetAccessor extends Declaration {}
+
+class SetAccessor extends Declaration {}
 
 class MyExportDeclaration {
     private _identifier: string;

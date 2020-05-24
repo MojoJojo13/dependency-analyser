@@ -17,7 +17,6 @@ describe('Dependency Analyser', () => {
 
     // it('init directory' , () => {
     //     let dependencyAnalyser = new DependencyAnalyser(dirName);
-    //         dependencyAnalyser.initDtsCreator();
     //         dependencyAnalyser.scanAllFiles();
     // });
 

@@ -31,6 +31,18 @@ require("module"); // is not supported
     - property call on the object
     - function call on the object
 
+## Declarations
+```typescript
+import {MyClass} from "destination"
+let myClass1 = new MyClass(), // +1 not tracked
+    myClass2: MyClass, // +1 tracked
+    myClass3: MyClass = new MyClass(); // +1 tracked
+let [MyClass4, MyClass5] = [new MyClass(), new MyClass()] // +2 not supported
+let myClass6, myClass7; // not tracked
+myClass6 = myClass7 = new MyClass(); // +1
+let myArray: MyClass[] = [new MyClass(), new MyClass()]; //+2 not tracked
+```
+
 ## Classes
 
 ### New Instance
@@ -44,11 +56,10 @@ new MyClass(); // +1
 
 *destination.d.ts*
 ```typescript
-export class MyClass {
-    aProperty: string;
-    constructor() {}
-    doSomething = function (): MyClass {};
-    static staticMethod = function (): void {};
+export declare class MyClass {
+    constructor();
+    doSomething: () => MyClass;
+    static myStaticMethod: () => string;
 }
 ```
 *import.ts*

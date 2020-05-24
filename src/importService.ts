@@ -1,8 +1,8 @@
 import * as ts from "typescript";
-import {Declaration, ImportDeclaration, PropertyDeclaration} from "./Declarations";
+import {Declaration, ImportDeclaration} from "./Declarations";
 import {DependencyAnalyser} from "./DependencyAnalyser";
 import * as path from "path";
-import {ExportScanner} from "./exportService";
+import {ExportScanner, PropertyDeclaration} from "./exportService";
 import assert = require("assert");
 
 export class ImportScanner {
@@ -18,10 +18,12 @@ export class ImportScanner {
         this.dependencyAnalyser = dependencyAnalyser;
         this.fileName = fileName;
         this.source = source;
+
         printChildren(source);
         console.log("-------------------");
         this.scanSource(source);
         console.log("-------------------");
+
         //this.surfaceCount(source);
         // console.log("globalCount:", this.globalCount);
         // console.log("this.importMap", this.importMap);
@@ -105,109 +107,27 @@ export class ImportScanner {
 
                     break;
 
-                // case ts.SyntaxKind.VariableDeclarationList:
-                //
-                //     break;
-
-                case ts.SyntaxKind.FirstStatement:
-                    // console.log("child", child);
-
-                    if ((<any>child).declarationList) {
-// console.log("child.declarationList.declarations", child.declarationList.declarations);
-// console.log("child.declarationList.declarations.initializer", child.declarationList.declarations[0].initializer);
-                        let declaration = new Declaration(child);
-                        // console.log("declaration.getKind()", declaration.getKind());
-                        if (declaration.getKind() === ts.SyntaxKind.TypeReference) {
-                            // console.log("declaration.getType()", declaration.getType());
-                            let typeName = declaration.getType().typeName.escapedText;
-                            let importedType = this.importMap.get(typeName);
-
-                            if (importedType) {
-                                // set reference to find the type easier
-                                declaration.reference = typeName;
-                                declaration.getA().forEach(value => {
-                                    console.log("importMap.set", value);
-                                    this.importMap.set(value, declaration);
-
-                                })
-                            }
-                        }
-                    } else {
-                        console.log("no idea what kind of statement that is:", ts.SyntaxKind[child.kind]);
-                    }
-
+                case ts.SyntaxKind.VariableDeclarationList:
+                    handleVariableDeclarationList(<ts.VariableDeclarationList>child, this.importMap);
                     break;
 
-                // case ts.SyntaxKind.ExpressionStatement:
-                //     if (child.expression.kind === ts.SyntaxKind.CallExpression) {
-                //         console.log("child.expression", child.expression);
-                //     } else {
-                //         console.log("no idea what kind of expression that is:", ts.SyntaxKind[child.kind]);
-                //     }
-                //     break;
-                case ts.SyntaxKind.CallExpression:
-                    let callExpression = <ts.CallExpression>child;
-                    if (ts.isPropertyAccessExpression(callExpression.expression)) {
-                        let propertyAccessExpression = <ts.PropertyAccessExpression>callExpression.expression;
-
-                        let type = findMeTheTypeRek(propertyAccessExpression.expression, this.importMap);
-                        console.log("FirstType", type);
-
-                        // console.log("type", type);
-
-                    } else {
-                        console.log("it's not a PropertyAccessExpression: do something about it");
-                    }
-
-                    console.log("CallExpression", child);
-
-                    break;
                 case ts.SyntaxKind.PropertyAccessExpression:
-                    // ts.isPropertyAccessExpression();
-                    let propertyAccess = <ts.PropertyAccessExpression>child;
+                    handlePropertyAccessExpression(<ts.PropertyAccessExpression>child, this.importMap);
+                    break;
 
-                    if (propertyAccess.expression) {
-
-                        if (propertyAccess.expression.kind === ts.SyntaxKind.Identifier) {
-                            let text = (<ts.Identifier>propertyAccess.expression).escapedText.toString();
-                            console.log("text", text);
-                            let importDeclaration = this.importMap.get(text);
-                            console.log("importDeclaration", importDeclaration);
-                            if (importDeclaration) {
-                                // TODO: make better or introduce reference to separate between imports and variables
-                                if (importDeclaration.getType()) {
-                                    let typeName = importDeclaration.getType().typeName.escapedText;
-
-                                    if (typeName) {
-                                        let typeDeclaration = this.importMap.get(typeName);
-                                        if (typeDeclaration) {
-                                            typeDeclaration.getMembers();
-                                            //TODO: continue here
-                                        }
-                                    }
-                                }
-
-                                // let property = propertyAccess.name.escapedText;
-                                // console.log("property", typeName);
-                                // importDeclaration.getProperties();
-
-                            }
-                        } else { //TODO: maybe check for Expression
-
-                        }
-                    }
-                    console.log("ts.SyntaxKind.PropertyAccessExpression", child);
+                case ts.SyntaxKind.CallExpression:
+                    handleCallExpression(<ts.CallExpression>child, this.importMap);
                     break;
 
                 case ts.SyntaxKind.ImportEqualsDeclaration: // Not supported
-                    console.log("Not supported", child.kind);
+                    console.error(`Not supported: ${ts.SyntaxKind[child.kind]} (${child.kind})`);
                     break;
 
                 case ts.SyntaxKind.EndOfFileToken: // Ignore
                     break;
 
                 default:
-                    console.log("Can't handle this:", child.kind);
+                    console.log(`Can't handle this: ${ts.SyntaxKind[child.kind]} (${child.kind})`);
                     that.scanSource(child);
                     break;
             }
@@ -265,6 +185,181 @@ export class ImportScanner {
     }
 }
 
+function handleVariableDeclarationList(
+    variableDeclarationList: ts.VariableDeclarationList,
+    variableMap: Map<string, Declaration>
+) {
+    // console.log("variableDeclarationList", variableDeclarationList);
+    console.log("-----------------------");
+    variableDeclarationList.forEachChild(function (variableDeclaration: ts.VariableDeclaration) {
+        // console.log("variableDeclaration", variableDeclaration);
+        handleVariableDeclaration(variableDeclaration, variableMap);
+    })
+
+}
+
+function handleVariableDeclaration(
+    variableDeclaration: ts.VariableDeclaration,
+    variableMap: Map<string, Declaration>
+) {
+    let name = variableDeclaration.name;
+    let type = variableDeclaration.type;
+    let initializer = variableDeclaration.initializer;
+
+    let nameText: string;
+    let typeKind: number;
+    let initializerKind: number;
+
+    if (ts.isIdentifier(name)) {
+        nameText = name.escapedText.toString();
+    } else {
+        console.log("Can't handle this type of VariableDeclaration.Name, so skip it");
+        return;
+    }
+
+    if (type) {
+        typeKind = type.kind;
+
+        if (ts.isTypeReferenceNode(type)) {
+            let typeReferenceNode = <ts.TypeReferenceNode>type;
+            let typeName = typeReferenceNode.typeName;
+
+            if (ts.isIdentifier(typeName)) {
+                let typeNameText: string = typeName.escapedText.toString();
+
+                // track this variable if it's type is imported
+                checkTypeAndTrackVariable(typeNameText, nameText, variableDeclaration, variableMap);
+            } else {
+                console.error(typeName);
+                throw "typeName is not an Identifier";
+            }
+        }
+    }
+    if (initializer) {
+        initializerKind = initializer.kind;
+
+        if (ts.isNewExpression(initializer)) {
+            let newExpression = <ts.NewExpression>initializer;
+
+            if (ts.isIdentifier(newExpression.expression)) {
+                let identifier = <ts.Identifier>newExpression.expression;
+                let typeNameText = identifier.escapedText.toString();
+
+                // track this variable because it's a NewExpression of an imported type
+                checkTypeAndTrackVariable(typeNameText, nameText, variableDeclaration, variableMap);
+            }
+        } else if (ts.isPropertyAccessExpression(initializer)) {
+            let typeNameText = handlePropertyAccessExpression(<ts.PropertyAccessExpression>initializer, variableMap);
+
+            if (typeNameText) {
+                // track if this is not an primitive type
+                checkTypeAndTrackVariable(typeNameText, nameText, variableDeclaration, variableMap);
+            }
+        }  else if (ts.isCallExpression(initializer)) {
+            let typeNameText = handleCallExpression(<ts.CallExpression>initializer, variableMap);
+
+            // track this variable if it's type is imported
+            checkTypeAndTrackVariable(typeNameText, nameText, variableDeclaration, variableMap);
+        } else {
+            console.log("initializer is neither a NewExpression nor a PropertyAccessExpression, maybe handle this later");
+        }
+    }
+
+    // console.log(`#\n Name: ${nameText}, \n TypeKind: ${ts.SyntaxKind[typeKind]} (${typeKind}), \n Initializer: ${ts.SyntaxKind[initializerKind]} (${initializerKind})`);
+}
+
+function handleCallExpression(
+    callExpression: ts.CallExpression,
+    variableMap: Map<string, Declaration>
+): string {
+    let expression = callExpression.expression;
+
+    if (ts.isPropertyAccessExpression(expression)) {
+        return handlePropertyAccessExpression(expression, variableMap);
+    } else if (ts.isIdentifier(expression)) {
+        //TODO: look for declaration of this function and check the return type
+    } else {
+        console.error(expression);
+        throw "callExpression.expression is not a PropertyAccessExpression";
+    }
+}
+
+function handlePropertyAccessExpression(
+    propertyAccessExpression: ts.PropertyAccessExpression,
+    variableMap: Map<string, Declaration>
+): string {
+    let expression = propertyAccessExpression.expression;
+    let propertyName = propertyAccessExpression.name.escapedText.toString();
+
+    if (ts.isIdentifier(expression)) {
+        let identifier = <ts.Identifier>expression;
+        let name = identifier.escapedText.toString();
+        let externalVariable = variableMap.get(name);
+
+        if (externalVariable) { //TODO: handle internal calls with external type return
+            // Left side of property call is an external (object)
+            let typeName = externalVariable.reference || name;
+            return checkForPropertyCallOnImportedObject(typeName, propertyName, variableMap);
+            // return typeName;
+        }
+
+    } else if (ts.isCallExpression(expression)) {
+        let typeName = handleCallExpression(expression, variableMap);
+        
+        if (typeName) {
+            return checkForPropertyCallOnImportedObject(typeName, propertyName, variableMap);
+        }
+
+        // return typeName;
+    } else if (ts.isNewExpression(expression)) {
+        let identifier = <ts.Identifier>expression.expression;
+        let typeNameText = identifier.escapedText.toString();
+
+        return checkForPropertyCallOnImportedObject(typeNameText, propertyName, variableMap);
+
+        // return typeNameText;
+    } else {
+        console.error(propertyAccessExpression);
+        throw "propertyAccessExpression.expression is not handled";
+    }
+}
+
+function checkForPropertyCallOnImportedObject( //FixMe: i'm ugly
+    typeName: string,
+    propertyName: string,
+    variableMap: Map<string, Declaration>
+) {
+    let type = <ImportDeclaration>variableMap.get(typeName);
+    let exportScanner = type.exportScanner;
+    let propertyDeclaration = <PropertyDeclaration>exportScanner.exportNodesMap.get(typeName).getMembers().get(propertyName);
+
+    if (propertyDeclaration) { // count this as a successful call
+        console.log("propertyDeclaration", propertyDeclaration);
+        console.log("HERE IS A PROPERTY CALL ON AN IMPORTED TYPE", `<${typeName}>.${propertyName}`);
+    }
+    return propertyDeclaration.getType();
+}
+
+function checkTypeAndTrackVariable(
+    typeNameText: string,
+    nameText: string,
+    node: ts.Node,
+    variableMap: Map<string, Declaration>
+) {
+    let variableReference = variableMap.get(typeNameText);
+
+    if (variableReference) { // track variable
+        let declaration = new Declaration(node);
+        declaration.reference = typeNameText;
+        variableMap.set(nameText, declaration);
+    }
+}
+
+/**
+ * @deprecated
+ * @param expression
+ * @param variableMap
+ */
 function findMeTheTypeRek(expression: ts.Node, variableMap): string {
     if (ts.isCallExpression(expression)) {
         let callExpression = <ts.CallExpression>expression;
@@ -273,21 +368,28 @@ function findMeTheTypeRek(expression: ts.Node, variableMap): string {
 
         let propertyAccessExpression = <ts.PropertyAccessExpression>callExpression.expression;
 
-        // console.log("propertyAccessExpression", propertyAccessExpression);
+        console.log("propertyAccessExpression", propertyAccessExpression);
         let propertyName = propertyAccessExpression.name.escapedText.toString();
 
         let typeName = findMeTheTypeRek(propertyAccessExpression.expression, variableMap);
         if (typeName) {
 
             let type = variableMap.get(typeName);
-            let exportScanner = type.exportScanner;
-            let propertyDeclaration = <PropertyDeclaration>exportScanner.exportNodesMap.get(typeName).getMembers().get(propertyName);
-            // if (propertyDeclaration) //TODO: count this as a successful call
-            // @ts-ignore
-            let retType = propertyDeclaration.node.type.type.typeName.escapedText;
-            console.log("retType", retType);
-            if (retType) { //TODO: implement not void and any types
-                return retType;
+            if (type) {
+
+                let exportScanner = type.exportScanner;
+                let propertyDeclaration = <PropertyDeclaration>exportScanner.exportNodesMap.get(typeName).getMembers().get(propertyName);
+
+                if (propertyDeclaration) { // count this as a successful call
+                    console.log("HERE IS A PROPERTY CALL ON AN IMPORTED OBJECT");
+                }
+
+                // @ts-ignore
+                let retType = propertyDeclaration.node.type.type.typeName.escapedText;
+                // console.log("retType", retType);
+                if (retType) { //TODO: implement not void and any types
+                    return retType;
+                }
             }
             // console.log("typeName", typeName);
             // console.log("type", type);
@@ -308,23 +410,8 @@ function findMeTheTypeRek(expression: ts.Node, variableMap): string {
         let identifier = <ts.Identifier>expression;
         let name = identifier.escapedText.toString();
         let variable = variableMap.get(name);
-        console.log("variable", variable);
 
         return variable.reference || name;
-
-        // let referenceName = variable.reference;
-        // console.log("referenceName", referenceName);
-        // if (referenceName) {
-        //     let refVariable = variableMap.get(referenceName);
-        //     console.log("refVariable", refVariable);
-        //
-        //     // let typeName = refVariable.getType();//.typeName.escapedText;
-        //     // console.log("refVariable => typeName", typeName);
-        // } else {
-        //     // let typeName = variable.getType();//.typeName.escapedText;
-        //     // console.log("variable => typeName", typeName);
-        // }
-        // TODO: return type;
     } else {
         console.log("it's not a CallExpression or an Identifier: do something about it");
     }
