@@ -3,8 +3,26 @@ import * as path from "path";
 import * as ts from "typescript";
 import {DtsCreator} from "./DtsCreator";
 import {ImportScanner} from "./importService";
+import {ExportScanner} from "./exportService";
+import {SourceFile} from "./exportDeclarations";
 
 export class DependencyAnalyser {
+    get moduleSourceFileMap(): Map<string, SourceFile> {
+        return this._moduleSourceFileMap;
+    }
+
+    set moduleSourceFileMap(value: Map<string, SourceFile>) {
+        this._moduleSourceFileMap = value;
+    }
+
+    get moduleExportScannerMap(): Map<string, ExportScanner> {
+        return this._moduleExportScannerMap;
+    }
+
+    set moduleExportScannerMap(value: Map<string, ExportScanner>) {
+        this._moduleExportScannerMap = value;
+    }
+
     get importScannerMap(): Map<string, ImportScanner> {
         return this._importScannerMap;
     }
@@ -51,8 +69,12 @@ export class DependencyAnalyser {
     private _dtsCreator: DtsCreator;
     private _allFiles: string[];
     private _importScannerMap: Map<string, ImportScanner>;
+    private _moduleExportScannerMap: Map<string, ExportScanner>;
+    private _moduleSourceFileMap: Map<string, SourceFile>;
 
     constructor(srcPath: string) {
+        this.moduleExportScannerMap = new Map<string, ExportScanner>();
+        this.moduleSourceFileMap = new Map<string, SourceFile>();
 
         if (fs.existsSync(srcPath)) {
             let lstatSync = fs.lstatSync(srcPath);
@@ -115,6 +137,68 @@ export class DependencyAnalyser {
                 }
             })
         }
+    }
+
+    getModuleSourceFile(moduleName: string): SourceFile {
+        let sourceFile: SourceFile = this.moduleSourceFileMap.get(moduleName);
+
+        if (!sourceFile) {
+            let pathToModule = require.resolve(moduleName);
+            let dtsPath = pathToModule.replace("js", "d.ts");
+
+            console.log("pathToModule", pathToModule);
+            if (fs.existsSync(dtsPath)) {
+
+                const sourceFileTs = ts.createSourceFile(
+                    dtsPath, // fileName
+                    fs.readFileSync(dtsPath, 'utf8'), // sourceText
+                    ts.ScriptTarget.Latest, // languageVersion
+                );
+
+                sourceFile = new SourceFile(sourceFileTs);
+
+                this.moduleSourceFileMap.set(moduleName, sourceFile);
+            } else {
+                console.error("moduleName", moduleName);
+                console.error("pathToModule", pathToModule);
+                throw "can't find .d.ts file";
+            }
+        }
+
+        console.log("-------------------");
+
+        return sourceFile;
+    }
+
+    getModuleExportScanner(moduleName: string): ExportScanner {
+        let exportScanner = this.moduleExportScannerMap.get(moduleName);
+
+        if (!exportScanner) {
+
+            let pathToModule = require.resolve(moduleName);
+            let dtsPath = pathToModule.replace("js", "d.ts");
+
+            console.log("pathToModule", pathToModule);
+            if (fs.existsSync(dtsPath)) {
+
+                const sourceFile = ts.createSourceFile(
+                    dtsPath, // fileName
+                    fs.readFileSync(dtsPath, 'utf8'), // sourceText
+                    ts.ScriptTarget.Latest, // languageVersion
+                );
+
+                exportScanner = new ExportScanner();
+                exportScanner.scanFile(sourceFile);
+
+                this.moduleExportScannerMap.set(moduleName, exportScanner);
+            } else {
+                console.error("moduleName", moduleName);
+                console.error("pathToModule", pathToModule);
+                throw "can't find .d.ts file";
+            }
+        }
+
+        return exportScanner;
     }
 
     get path(): string {

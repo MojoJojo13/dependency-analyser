@@ -21,3 +21,5 @@ import myDefaultClass2, * as myName2 from "./defaultExport2"
 import "./simpleExports"
 
 // var promise = import("module-name");
+
+import * as ts from "typescript";

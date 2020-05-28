@@ -34,12 +34,14 @@ require("module"); // is not supported
 ## Declarations
 ```typescript
 import {MyClass} from "destination"
-let myClass1 = new MyClass(), // +1 not tracked
+let myClass1 = new MyClass(), // +1 tracked
     myClass2: MyClass, // +1 tracked
     myClass3: MyClass = new MyClass(); // +1 tracked
-let [MyClass4, MyClass5] = [new MyClass(), new MyClass()] // +2 not supported
+
 let myClass6, myClass7; // not tracked
 myClass6 = myClass7 = new MyClass(); // +1
+
+let [MyClass4, MyClass5] = [new MyClass(), new MyClass()] // +2 not supported
 let myArray: MyClass[] = [new MyClass(), new MyClass()]; //+2 not tracked
 ```
 

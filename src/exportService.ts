@@ -1,34 +1,55 @@
 import * as ts from "typescript";
 import {ClassDeclaration} from "typescript";
-
-// import {ExportDeclaration, ExportSpecifier, NamedExports, NamespaceExport, SourceFile} from "typescript";
+import {printChildren} from "./util";
+import assert = require("assert");
 
 export class ExportScanner {
-    exportNodesMap = new Map();
+    exportNodesMap = new Map<string, Declaration>();
 
     constructor() {
     }
 
     scanFile = function (source: ts.SourceFile) {
-        let exportNodesMap = new Map();
+        let exportNodesMap = new Map<string, Declaration>();
 
         source.forEachChild(child => {
 
+            let name: string;
             switch (child.kind) {
                 case ts.SyntaxKind.FunctionDeclaration:
                 case ts.SyntaxKind.ClassDeclaration:
                 case ts.SyntaxKind.InterfaceDeclaration:
                 case ts.SyntaxKind.TypeAliasDeclaration:
                 case ts.SyntaxKind.EnumDeclaration:
-                case ts.SyntaxKind.ModuleDeclaration:
-                    const declaration = <ts.FunctionDeclaration | ts.ClassDeclaration | ts.InterfaceDeclaration | ts.TypeAliasDeclaration | ts.EnumDeclaration>child;
-                    let name = declaration.name.escapedText.toString();
 
-                    if (name) {
-                        this.exportNodesMap.set(name, new Declaration(child));
+                type declarations = ts.FunctionDeclaration
+                    | ts.ClassDeclaration
+                    | ts.InterfaceDeclaration
+                    | ts.TypeAliasDeclaration
+                    | ts.EnumDeclaration;
+
+                    const declaration = <declarations>child;
+                    name = declaration.name.escapedText.toString();
+
+                    assert(name, "can't find name");
+
+                    this.exportNodesMap.set(name, new Declaration(child));
+
+                    break;
+
+                case ts.SyntaxKind.ModuleDeclaration:
+                    const moduleDeclaration = <ts.ModuleDeclaration>child;
+                    name = (<ts.Identifier>moduleDeclaration.name).escapedText.toString();
+
+                    assert(name, "can't find name");
+
+                    let exportNode = <ModuleDeclaration>this.exportNodesMap.get(name);
+                    if (exportNode) {
+                        exportNode.nodes.push(moduleDeclaration);
                     } else {
-                        console.log("Error: can't find name");
+                        this.exportNodesMap.set(name, new ModuleDeclaration(moduleDeclaration));
                     }
+
                     break;
 
                 case ts.SyntaxKind.FirstStatement:
@@ -191,12 +212,12 @@ function findExportDeclarations(source: ts.SourceFile) {
 
             } else { // @ts-ignore
                 if (exportDeclaration.exportClause.kind === 262 /* NamespaceExport */) {
-                                let namespaceExport = <ts.NamespaceExport>exportDeclaration.exportClause;
+                    let namespaceExport = <ts.NamespaceExport>exportDeclaration.exportClause;
 
-                                console.log("namespaceExport", namespaceExport);
-                            } else {
-                                console.log("Can't handle this 0");
-                            }
+                    console.log("namespaceExport", namespaceExport);
+                } else {
+                    console.log("Can't handle this 0");
+                }
             }
         }
 
@@ -233,9 +254,9 @@ class Declaration {
 
         return returnString;
     }
-    
+
     getMembers() {
-        return _getMemberMap(<ts.InterfaceDeclaration | ts.ClassDeclaration> this.node);
+        return _getMemberMap(<ts.InterfaceDeclaration | ts.ClassDeclaration>this.node);
     }
 
     getKind(): ts.SyntaxKind {
@@ -264,7 +285,8 @@ class Declaration {
     }
 }
 
-class MethodDeclaration extends Declaration {}
+class MethodDeclaration extends Declaration {
+}
 
 export class PropertyDeclaration extends Declaration {
     getType(): string {
@@ -272,7 +294,7 @@ export class PropertyDeclaration extends Declaration {
         // console.log("this.node", this.node);
         let propertyDeclaration = <ts.PropertyDeclaration>this.node;
         if (ts.isTypeNode(propertyDeclaration.type)) {
-            let typeNode = <ts.TypeNode> propertyDeclaration.type;
+            let typeNode = <ts.TypeNode>propertyDeclaration.type;
 
             // @ts-ignore
             if (typeNode.type) {
@@ -293,13 +315,35 @@ export class PropertyDeclaration extends Declaration {
     }
 }
 
-class MethodSignature extends Declaration {}
+class MethodSignature extends Declaration {
+}
 
-class Constructor extends Declaration {}
+class Constructor extends Declaration {
+}
 
-class GetAccessor extends Declaration {}
+class GetAccessor extends Declaration {
+}
 
-class SetAccessor extends Declaration {}
+class SetAccessor extends Declaration {
+}
+
+class ModuleDeclaration extends Declaration {
+
+    private _nodes: ts.ModuleDeclaration[];
+
+    constructor(...nodes: ts.ModuleDeclaration[]) {
+        super(nodes[0]);
+        this.nodes = nodes;
+    }
+
+    get nodes(): ts.ModuleDeclaration[] {
+        return this._nodes;
+    }
+
+    set nodes(value: ts.ModuleDeclaration[]) {
+        this._nodes = value;
+    }
+}
 
 class MyExportDeclaration {
     private _identifier: string;

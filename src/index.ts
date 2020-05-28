@@ -9,7 +9,6 @@ console.log('process.argv', process.argv.slice(2));
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-import {ExportDeclaration} from "./exportDeclaration";
 import {FileHandler} from "./fileHandler";
 
 
@@ -103,22 +102,6 @@ console.log("-------------------------------------------------------------------
 //     // })
 // }
 
-export function printChildren(node, indent?: string) {
-    indent = indent || "";
-
-    node.forEachChild(child => {
-
-        if (child.escapedText) {
-            console.log(indent + "SyntaxKind:", child.kind + " " + ts.SyntaxKind[child.kind], "| EscapedText:", child.escapedText);
-        } else if (child.text) {
-            console.log(indent + "SyntaxKind:", child.kind + " " + ts.SyntaxKind[child.kind], "| Text:", child.text);
-        } else {
-            console.log(indent + "SyntaxKind:", child.kind + " " + ts.SyntaxKind[child.kind]);
-        }
-
-        printChildren(child, indent + "  ");
-    })
-}
 
 export function add(x: number, y: number) {
     return x + y;
