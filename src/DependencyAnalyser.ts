@@ -7,6 +7,7 @@ import {ExportScanner} from "./exportService";
 import {SourceFile} from "./exportDeclarations";
 
 export class DependencyAnalyser {
+
     get moduleSourceFileMap(): Map<string, SourceFile> {
         return this._moduleSourceFileMap;
     }
@@ -96,7 +97,8 @@ export class DependencyAnalyser {
     initDtsCreator() {
         console.log("this.allFiles", this.allFiles);
         this.dtsCreator = new DtsCreator(this.allFiles);
-        this.dtsCreator.createExportService();
+        // this.dtsCreator.createExportService();
+        this.dtsCreator.createSourceFiles();
     }
 
     scanAllFiles() {
@@ -144,7 +146,7 @@ export class DependencyAnalyser {
 
         if (!sourceFile) {
             let pathToModule = require.resolve(moduleName);
-            let dtsPath = pathToModule.replace("js", "d.ts");
+            let dtsPath = pathToModule.replace(/\.js$/g, ".d.ts");
 
             console.log("pathToModule", pathToModule);
             if (fs.existsSync(dtsPath)) {
@@ -156,12 +158,13 @@ export class DependencyAnalyser {
                 );
 
                 sourceFile = new SourceFile(sourceFileTs);
-
                 this.moduleSourceFileMap.set(moduleName, sourceFile);
             } else {
                 console.error("moduleName", moduleName);
                 console.error("pathToModule", pathToModule);
-                throw "can't find .d.ts file";
+                //TODO: handle standard modules
+                return;
+                // throw Error("can't find .d.ts file");
             }
         }
 
@@ -170,13 +173,16 @@ export class DependencyAnalyser {
         return sourceFile;
     }
 
+    /**
+     * @deprecated
+     */
     getModuleExportScanner(moduleName: string): ExportScanner {
         let exportScanner = this.moduleExportScannerMap.get(moduleName);
 
         if (!exportScanner) {
 
             let pathToModule = require.resolve(moduleName);
-            let dtsPath = pathToModule.replace("js", "d.ts");
+            let dtsPath = pathToModule.replace(".js$", ".d.ts");
 
             console.log("pathToModule", pathToModule);
             if (fs.existsSync(dtsPath)) {
@@ -194,7 +200,9 @@ export class DependencyAnalyser {
             } else {
                 console.error("moduleName", moduleName);
                 console.error("pathToModule", pathToModule);
-                throw "can't find .d.ts file";
+                //TODO: handle standard modules
+                return;
+                // throw Error("can't find .d.ts file");
             }
         }
 

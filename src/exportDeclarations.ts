@@ -30,9 +30,9 @@ export abstract class Declaration {
             member.forEach(declaration => {
                 let name = declaration.constructor.name;
                 countMap.set(name, countMap.get(name) + 1 || 1);
-            })
+            });
 
-        })
+        });
 
         return countMap;
     }
@@ -68,10 +68,40 @@ export class SourceFile extends Declaration {
     getMemberMap(): Map<string, Declaration[]> {
         let memberMap: Map<string, Declaration[]> = new Map<string, Declaration[]>();
 
+        let exportAssignments = this.node.getChildren().filter(value => ts.isExportAssignment(value));
+        if (exportAssignments.length > 0) {
+            console.log("exportAssignments", exportAssignments);
+        }
+
+        let nameSpaceName: string;
+
         this.node.forEachChild(child => {
-            handleNode(child, memberMap);
+
+            if (ts.isExportAssignment(child)) {
+                if (ts.isIdentifier(child.expression)) {
+                    nameSpaceName = child.expression.escapedText.toString();
+                } else {
+                    console.error("Expression", child.expression);
+                    throw Error("Can't handle expression!");
+                }
+            } else {
+                handleNode(child, memberMap);
+            }
         });
 
+        // if an ExportAssignment is defined, return only the members of that Namespace
+        if (nameSpaceName) {
+            let internalMemberMap = new Map<string, Declaration[]>();
+
+            memberMap.get(nameSpaceName).forEach(value => {
+                // merge all Maps into one
+                internalMemberMap = new Map([...internalMemberMap, ...value.getMemberMap()]);
+                return undefined;
+            });
+// console.log("internalMemberMap", internalMemberMap);
+            return internalMemberMap;
+        }
+// console.log("memberMap", memberMap);
         return memberMap;
     }
 
@@ -114,7 +144,7 @@ export class ModuleDeclaration extends Declaration {
 
         } else {
             console.error(body);
-            throw `it's not a ModuleBLock: ${ts.SyntaxKind[body.kind]} (${body.kind})`;
+            throw `it's not a ModuleBlock: ${ts.SyntaxKind[body.kind]} (${body.kind})`;
         }
 
         return memberMap;
@@ -157,7 +187,6 @@ export class EnumDeclaration extends Declaration {
 }
 
 export class EnumMember extends Declaration {
-
 }
 
 export class FunctionDeclaration extends Declaration {
@@ -210,7 +239,7 @@ export class MethodSignature extends Declaration {
 }
 
 export class Type extends Declaration {
-    // TODO: node: ts.TYPE
+    // node: ts.Type
 
     getName(): string { // HANDLE T and U stuff
         if (this.node["typeName"]) {
@@ -221,9 +250,14 @@ export class Type extends Declaration {
             // return this.node["members"].map(value => new Type(value).getName());
         } else if (this.node["elementType"]) {
             return new Type(this.node["elementType"]).getName();
-        } else if (this.node["type"] && this.node["type"]["elementType"]) {
-            return new Type(this.node["type"]["elementType"]).getName();
+        } else if (this.node["type"]) {
+            if (this.node["type"]["elementType"]) {
+                return new Type(this.node["type"]["elementType"]).getName();
+            } else {
+                return new Type(this.node["type"]).getName();
+            }
         } else if (this.node["parameterName"]) {
+            printChildren(this.node);
             console.log("this.node", this.node);
             // TODO: handle advanced types?
             // https://www.typescriptlang.org/docs/handbook/advanced-types.html
@@ -362,14 +396,24 @@ function handleNode(node: ts.Node, memberMap: Map<string, Declaration[]>) {
 
             break;
 
-        //handle later
-        case ts.SyntaxKind.IndexSignature:
+        case ts.SyntaxKind.ExportAssignment:
+            if (ts.isExportAssignment(node)) {
+                if (ts.isIdentifier(node.expression)) {
+                    let nameSpaceName = node.expression.escapedText.toString();
 
+                }
+            }
+            console.log("ExportAssignment:", node);
+            break;
+
+        //TODO: handle later
+        case ts.SyntaxKind.IndexSignature:
+        case ts.SyntaxKind.ImportDeclaration:
+        case ts.SyntaxKind.ExpressionStatement:
             break;
 
         // ignore
         case ts.SyntaxKind.EndOfFileToken:
-        case ts.SyntaxKind.ExportAssignment:
         case ts.SyntaxKind.ExportDeclaration:
             break;
 

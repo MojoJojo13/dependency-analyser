@@ -3,6 +3,9 @@ import {ClassDeclaration} from "typescript";
 import {printChildren} from "./util";
 import assert = require("assert");
 
+/**
+ * @deprecated
+ */
 export class ExportScanner {
     exportNodesMap = new Map<string, Declaration>();
 

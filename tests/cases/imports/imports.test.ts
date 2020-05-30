@@ -13,8 +13,6 @@ describe('Test Imports', () => {
     dependencyAnalyser.scanAllFiles();
     let importScanner = dependencyAnalyser.importScannerMap.get(fileName);
     let importMap = importScanner.importMap;
-    // console.log("importMap", importMap);
-    console.log("importMap.get('ts');", importMap.get("ts"));
 
     it('import * as myName from "./simpleExports"' , () => {
         expect(

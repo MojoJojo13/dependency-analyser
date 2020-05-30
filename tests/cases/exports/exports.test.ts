@@ -25,4 +25,11 @@ describe('My math library 1', () => {
         // expect(add(3,4)).to.equal(7);
     });
 
+    it('should be able to add things correctly' , () => {
+        let countMemberMap = sourceFile.getCountMemberMap();
+        console.log("countMemberMap", countMemberMap);
+
+        // expect(add(3,4)).to.equal(7);
+    });
+
 });

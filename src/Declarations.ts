@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import {NamedImports, NamespaceImport} from "typescript";
 import {ExportScanner} from "./exportService";
+import {SourceFile} from "./exportDeclarations";
 
 export class Declaration {
 
@@ -89,8 +90,17 @@ export class Declaration {
 }
 
 export class ImportDeclaration extends Declaration {
+
     private _fileName: string;
+    /**
+     * @deprecated
+     */
     private _exportScanner: ExportScanner;
+    private _sourceFile: SourceFile;
+
+    toString(): string {
+        return `FileName: ${this.fileName}`;
+    }
 
     getImportSpecifiers(): string[] {
         let importSpecifiers: string[] = [];
@@ -135,13 +145,25 @@ export class ImportDeclaration extends Declaration {
     set fileName(value: string) {
         this._fileName = value;
     }
-
+    /**
+     * @deprecated
+     */
     get exportScanner(): ExportScanner {
         return this._exportScanner;
     }
-
+    /**
+     * @deprecated
+     */
     set exportScanner(value: ExportScanner) {
         this._exportScanner = value;
+    }
+
+    get sourceFile(): SourceFile {
+        return this._sourceFile;
+    }
+
+    set sourceFile(value: SourceFile) {
+        this._sourceFile = value;
     }
 }
 
