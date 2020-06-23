@@ -10,6 +10,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 import {FileHandler} from "./fileHandler";
+import {DependencyAnalyser} from "./DependencyAnalyser";
 
 
 let sPath = "C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server\\src\\node\\entry.ts";
@@ -27,6 +28,10 @@ const rootNode = ts.createSourceFile(
     ts.ScriptTarget.Latest, // languageVersion
     false
 );
+
+let dependencyAnalyser = new DependencyAnalyser(sPath);
+dependencyAnalyser.initDtsCreator();
+dependencyAnalyser.scanAllFiles();
 
 // let pathToModule1 = require.resolve("typescript");
 // console.log("pathToModule1", pathToModule1);

@@ -20,7 +20,7 @@ class ZipCodeValidator3 implements ZipCodeValidator2 {
     }
 }
 
-export let fnFoo, fnFoo2 = function (test: string) {
+export let fnFoo = function (test: string) {
     let x = new ZipCodeValidator();
     x.isAcceptable("ab234");
 }

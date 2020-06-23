@@ -9,13 +9,17 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "mocha -r ts-node/register tests/**/*.test.ts",
-    "coverage": "nyc -r lcov -e .ts -x \"*.test.ts\" npm run test"
+    "coverage": "nyc -r lcov -e .ts -x \"*.test.ts\" npm run test",
+    "tsc": "tsc"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "^13.13.4"
+    "@types/node": "^13.13.4",
+    "tsify": "^4.0.1",
+    "tslint": "^6.1.2",
+    "uniq": "^1.0.1"
   },
   "devDependencies": {
     "@types/chai": "^4.2.11",

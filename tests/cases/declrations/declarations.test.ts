@@ -11,25 +11,22 @@ describe('Test Declaration Stuff', () => {
     dependencyAnalyser.initDtsCreator();
     dependencyAnalyser.scanAllFiles();
 
-    // let a = dependencyAnalyser.moduleSourceFileMap.get(fileName);
-    // console.log(a.getMemberMap());
-
-    // let importMap = dependencyAnalyser.importScannerMap.get(fileName).importMap;
-    // console.log("importMap", importMap);
-    //
-    // it('let myClass0 = new MyClass();', () => {
-    //     expect(importMap.get("myClass0").reference).to.equal("MyClass");
-    // });
-    //
-    // it('let myClass1: MyClass = new MyClass();', () => {
-    //     expect(importMap.get("myClass1").reference).to.equal("MyClass");
-    // });
-    //
-    // it('let myClass0 = new MyClass();', () => {
-    //     expect(importMap.get("myClass2").reference).to.equal("MyClass");
-    // });
+    let importMap = dependencyAnalyser.importScannerMap.get(fileName).importMap;
+    console.log("importMap", importMap);
 
     it('let myClass0 = new MyClass();', () => {
+        expect(importMap.get("myClass0").reference).to.equal("MyClass");
+    });
+
+    it('let myClass1: MyClass = new MyClass();', () => {
+        expect(importMap.get("myClass1").reference).to.equal("MyClass");
+    });
+
+    it('let myClass0 = new MyClass();', () => {
+        expect(importMap.get("myClass2").reference).to.equal("MyClass");
+    });
+
+    it('...', () => {
 
     });
 

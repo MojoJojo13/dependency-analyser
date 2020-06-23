@@ -1,5 +1,6 @@
 import * as chai from 'chai';
 import 'mocha';
+import * as ts from "typescript";
 import {ImportDeclaration} from "../../../src/Declarations";
 import {DependencyAnalyser} from "../../../src/DependencyAnalyser";
 import {Declaration, FunctionDeclaration} from "../../../src/exportDeclarations";
@@ -34,7 +35,7 @@ describe('Test Imports', () => {
                     // console.log(value.getName(), Array.from((<EnumDeclaration>value).getEnumMembersMap().keys()));
                     break;
                 case "FunctionDeclaration":
-                    console.log(value.getName() + " =>", value.getType().getName());
+                    // console.log(value.getName() + " =>", value.getType().getName());
                     break;
                 case "ClassDeclaration":
                     // console.log("ClassDeclaration", value);

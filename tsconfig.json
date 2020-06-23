@@ -5,8 +5,9 @@
     "declaration": true,
     "inlineSources": true,
     "sourceMap": true,
-    "outDir": "./dist"
-  },
+    "outDir": "./dist",
+    "strictFunctionTypes": true
+  }
 //  "include": [
 //    "src/**/*"
 //  ]

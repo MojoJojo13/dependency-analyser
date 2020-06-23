@@ -15,13 +15,13 @@ describe('Dependency Analyser', () => {
     //     dependencyAnalyser.scanAllFiles();
     // });
 
-    // it('init directory' , () => {
-    //     let dependencyAnalyser = new DependencyAnalyser(dirName);
-    //         console.log("allFiles", dependencyAnalyser.allFiles);
-    //         dependencyAnalyser.initDtsCreator();
-    //         console.log("Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys())", Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys()));
-    //         dependencyAnalyser.scanAllFiles();
-    //
-    // });
+    it('init directory' , () => {
+        let dependencyAnalyser = new DependencyAnalyser(dirName);
+            console.log("allFiles", dependencyAnalyser.allFiles);
+            dependencyAnalyser.initDtsCreator();
+            console.log("Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys())", Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys()));
+            dependencyAnalyser.scanAllFiles();
+
+    });
 
 });

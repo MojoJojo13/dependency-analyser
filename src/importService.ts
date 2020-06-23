@@ -25,21 +25,21 @@ export class ImportScanner {
     }
 
     scanSource(node: ts.Node) {
-        let that = this;
+        const that = this;
 
         node.forEachChild(child => {
             switch (child.kind) {
                 case ts.SyntaxKind.ImportDeclaration:
-                    let importDeclaration = new ImportDeclaration(child);
-                    let importSpecifiers = importDeclaration.getImportSpecifiers();
+                    const importDeclaration = new ImportDeclaration(child);
+                    const importSpecifiers = importDeclaration.getImportSpecifiers();
 
                     // find and set the SourceFile
-                    let importSpecifier = importDeclaration.getModuleSpecifier();
+                    const importSpecifier = importDeclaration.getModuleSpecifier();
 
                     // is it a local module which starts with '../ or './'
                     if (RegExp('^(\\.\\.\\/)|^(\\.\\/)').test(importSpecifier)) {
                         const dtsFileName = path.join(path.dirname(this.fileName), importSpecifier) + ".d.ts";
-                        let sourceFile = this.dependencyAnalyser.dtsCreator.exportSourceFileMap.get(dtsFileName);
+                        const sourceFile = this.dependencyAnalyser.dtsCreator.exportSourceFileMap.get(dtsFileName);
 
                         console.assert(sourceFile, "SourceFile not found or not existing");
 
@@ -152,10 +152,10 @@ function handleVariableDeclarationList(
 ) {
     // console.log("variableDeclarationList", variableDeclarationList);
     console.log("-----------------------");
-    variableDeclarationList.forEachChild(function (variableDeclaration: ts.VariableDeclaration) {
+    variableDeclarationList.forEachChild(variableDeclaration => {
         // console.log("variableDeclaration", variableDeclaration);
-        handleVariableDeclaration(variableDeclaration, variableMap);
-    })
+        handleVariableDeclaration(variableDeclaration as ts.VariableDeclaration, variableMap);
+    });
 
 }
 
@@ -182,20 +182,49 @@ function handleVariableDeclaration(
         typeKind = type.kind;
 
         if (ts.isTypeReferenceNode(type)) {
-            let typeReferenceNode = <ts.TypeReferenceNode>type;
-            let typeName = typeReferenceNode.typeName;
+            let typeName = type.typeName;
 
             if (ts.isIdentifier(typeName)) {
                 let typeNameText: string = typeName.escapedText.toString();
 
                 // track this variable if it's type is imported
                 checkTypeAndTrackVariable(typeNameText, nameText, variableDeclaration, variableMap);
-            } else {
-                console.error(typeName);
-                throw "typeName is not an Identifier";
             }
+                // else if (ts.isQualifiedName(typeName)) {
+                //
+            // }
+            else {
+                console.error(typeName);
+                throw Error(`typeName is not an Identifier`);
+            }
+        } else if (ts.isTupleTypeNode(type)) {
+            // TODO: handle Tuples
+        } else if (ts.isArrayTypeNode(type)) {
+            // TODO: handle Arrays
+            console.log("type", type);
+
+            if (ts.isTypeReferenceNode(type.elementType)) {
+                console.log("type.elementType", type.elementType);
+                let typeName = type.elementType.typeName;
+
+                if (ts.isIdentifier(typeName)) {
+                    let typeNameText: string = typeName.escapedText.toString();
+
+                    // track this variable if it's type is imported
+                    checkTypeAndTrackVariable(typeNameText, nameText, variableDeclaration, variableMap);
+                }
+            } else {
+                console.error(`type is a not a ReferenceTypeNode: ${ts.SyntaxKind[type.elementType.kind]} (${type.elementType.kind})`);
+            }
+
+        } else {
+            // ignore simple types for now
+            console.error(`type is a Simple Type: ${ts.SyntaxKind[type.kind]} (${type.kind})`);
+            // console.error(type);
+            // throw Error(`type is not a ReferenceNode: ${ts.SyntaxKind[type.kind]} (${type.kind})`);
         }
     }
+
     if (initializer) {
         initializerKind = initializer.kind;
 
@@ -275,8 +304,10 @@ function handlePropertyAccessExpression(
         let typeNameText = identifier.escapedText.toString();
 
         return checkForPropertyCallOnImportedObject(typeNameText, propertyName, variableMap);
+    } else if(ts.isElementAccessExpression(expression)) {
+        console.log("expression", expression);
     } else {
-        console.error(propertyAccessExpression);
+        console.error(expression);
         throw Error("propertyAccessExpression.expression type is not handled");
     }
 }
@@ -297,7 +328,7 @@ function checkForPropertyCallOnImportedObject(
             let propertyDeclarationType = propertyDeclaration.getType();
 
             if (propertyDeclarationType) {
-                    console.log("HERE IS A PROPERTY CALL ON AN IMPORTED TYPE", `<${typeName}>.${propertyName}`);
+                console.log("HERE IS A PROPERTY CALL ON AN IMPORTED TYPE", `<${typeName}>.${propertyName}`);
             }
 
             propertyReturnType = propertyDeclarationType.getName();
