@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../src/presentation/templates/uikit/uikit.min.css"/>
+    <script src="../src/presentation/templates/uikit/uikit.min.js"></script>
+    <script src="../src/presentation/templates/uikit/uikit-icons.min.js"></script>
+    <!-- Chart.js -->
+    <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>-->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current', {'packages': ['corechart']});
+        google.charts.setOnLoadCallback(drawChart);
+
+        function drawChart() {
+
+            var data1 = google.visualization.arrayToDataTable([
+                ['Dependency', 'Imports'],
+                ['@coder/logger', 10],
+                ['fs-extra', 8],
+                ['tar-fs', 2],
+                ['ws', 1],
+                ['limiter', 1],
+                ['adm-zip', 1],
+                ['semver', 1],
+                ['js-yaml', 1],
+                ['http-proxy', 1],
+                ['httpolyglot', 1],
+                ['safe-compare', 1],
+                ['env-paths', 1],
+                ['xdg-basedir', 1],
+            ]);
+
+            var data2 = google.visualization.arrayToDataTable([
+                ['Node Dependency', 'Imports'],
+                ['path', 11],
+                ['http', 8],
+                ['child_process', 6],
+                ['net', 4],
+                ['url', 3],
+                ['querystring', 3],
+                ['stream', 3],
+                ['zlib', 2],
+                ['https', 2],
+                ['os', 2],
+                ['util', 2],
+                ['crypto', 2],
+                ['tls', 2],
+                ['fs', 1]
+            ]);
+
+            var data3 = google.visualization.arrayToDataTable([
+                ['dependency', 'Imports'],
+                ['node/app/login', 7],
+                ['node/app/util', 4],
+                ['node/app/wrapper', 4],
+                ['node/app/http', 3]
+            ]);
+
+            var options = {
+                // legend: 'none',
+                // title: 'My Daily Activities',
+                height: 300,
+                legend: {position: 'bottom', maxLines: 2},
+                sliceVisibilityThreshold: .1,
+                pieHole: 0.4,
+            };
+
+            var chart1 = new google.visualization.PieChart(document.getElementById('dependenciesChart'));
+            var chart2 = new google.visualization.PieChart(document.getElementById('nodeModulesChart'));
+            var chart3 = new google.visualization.PieChart(document.getElementById('customModulesChart'));
+
+            options.title = "Dependency Imports";
+            chart1.draw(data1, options);
+            options.title = "Node Module Imports";
+            chart2.draw(data2, options);
+            options.title = "Custom Module Imports";
+            chart3.draw(data3, options);
+        }
+    </script>
+    <style>
+        .center {
+            text-align: center;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        #page-wrapper {
+            min-height: calc(100% - 20px);
+            margin-bottom: -60px;
+        }
+
+        #page-wrapper:after {
+            content: "";
+            display: block;
+        }
+
+        #page-footer, #page-wrapper:after {
+            height: 60px;
+        }
+
+        #page-footer {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body class="uk-background-muted">
+<div id="page-wrapper">
+    <div class="uk-container uk-background-default">
+        <div class="uk-grid-divider uk-child-width-1-3@s" uk-grid>
+            <div>
+                <div id="dependenciesChart"></div>
+                <!--            <canvas id="dependenciesChart" width="300" height="300"></canvas>-->
+            </div>
+            <div>
+                <div id="nodeModulesChart"></div>
+                <!--            <canvas id="nodeModulesChart" width="300" height="300"></canvas>-->
+            </div>
+            <div>
+                <div id="customModulesChart"></div>
+                <!--            <canvas id="customModulesChart" width="300" height="300"></canvas>-->
+            </div>
+        </div>
+
+
+        <!--    <div style="width:300px; height:300px">-->
+        <!--        -->
+        <!--    </div>-->
+        <!--    <div style="width:300px; height:300px">-->
+        <!--        -->
+        <!--    </div>-->
+        <ul uk-accordion="multiple: true">
+            <li class="uk-open">
+                <a class="uk-accordion-title" href="#">Dependencies</a>
+                <div class="uk-accordion-content">
+                    <table class="uk-table uk-table-divider uk-table-hover uk-table-small uk-table-justify">
+                        <caption></caption>
+                        <thead>
+                        <tr>
+                            <th>Module</th>
+                            <th>NPM Repo</th>
+                            <th class="uk-table-shrink">Imports Count</th>
+                        </tr>
+                        </thead>
+                        <!--                    <tfoot>-->
+                        <!--                    <tr>-->
+                        <!--                        <td></td>-->
+                        <!--                    </tr>-->
+                        <!--                    </tfoot>-->
+                        <tbody>
+                        <tr>
+                            <td><a href="ModuleView.html">@coder/logger</a> <span uk-icon="icon: reply"></span></td>
+                            <td><a href="https://www.npmjs.com/package/@coder/logger" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">10</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>fs-extra</a></td>
+                            <td><a href="https://www.npmjs.com/" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">8</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>tar-fs</a></td>
+                            <td><a href="https://www.npmjs.com/" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">2</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>ws</a></td>
+                            <td><a href="https://www.npmjs.com/" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">1</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>limiter</a></td>
+                            <td><a href="https://www.npmjs.com/" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">1</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>adm-zip</a></td>
+                            <td><a href="https://www.npmjs.com/" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">1</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>semver</a></td>
+                            <td><a href="https://www.npmjs.com/" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">1</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>js-yaml</a></td>
+                            <td><a href="https://www.npmjs.com/" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">1</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>http-proxy</a></td>
+                            <td><a href="https://www.npmjs.com/" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">1</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>httpolyglot</a></td>
+                            <td><a href="https://www.npmjs.com/" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">1</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>safe-compare</a></td>
+                            <td><a href="https://www.npmjs.com/" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">1</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>env-paths</a></td>
+                            <td><a href="https://www.npmjs.com/" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">1</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>xdg-basedir</a></td>
+                            <td><a href="https://www.npmjs.com/" target="_blank">npm</a></td>
+                            <td><span class="uk-badge">1</span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </li>
+            <li>
+                <a class="uk-accordion-title" href="#">Node Modules</a>
+                <div class="uk-accordion-content">
+                    <table class="uk-table uk-table-divider uk-table-hover uk-table-small uk-table-justify">
+                        <caption></caption>
+                        <thead>
+                        <tr>
+                            <th>Module</th>
+                            <th class="uk-table-shrink">Imports Count</th>
+                        </tr>
+                        </thead>
+                        <!--                    <tfoot>-->
+                        <!--                    <tr>-->
+                        <!--                        <td></td>-->
+                        <!--                    </tr>-->
+                        <!--                    </tfoot>-->
+                        <tbody>
+                        <tr>
+                            <td><a>path</a></td>
+                            <td><span class="uk-badge">11</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>http</a></td>
+                            <td><span class="uk-badge">8</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>child_process</a></td>
+                            <td><span class="uk-badge">6</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>net</a></td>
+                            <td><span class="uk-badge">4</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>url</a></td>
+                            <td><span class="uk-badge">3</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>querystring</a></td>
+                            <td><span class="uk-badge">3</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>stream</a></td>
+                            <td><span class="uk-badge">3</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>zlib</a></td>
+                            <td><span class="uk-badge">2</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>https</a></td>
+                            <td><span class="uk-badge">2</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>os</a></td>
+                            <td><span class="uk-badge">2</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>util</a></td>
+                            <td><span class="uk-badge">2</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>crypto</a></td>
+                            <td><span class="uk-badge">2</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>tls</a></td>
+                            <td><span class="uk-badge">2</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>fs</a></td>
+                            <td><span class="uk-badge">1</span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </li>
+            <li>
+                <a class="uk-accordion-title" href="#">Custom Modules</a>
+                <div class="uk-accordion-content">
+                    <table class="uk-table uk-table-divider uk-table-hover uk-table-small uk-table-justify">
+                        <caption></caption>
+                        <thead>
+                        <tr>
+                            <th>Module</th>
+                            <th class="uk-table-shrink">Imports Count</th>
+                        </tr>
+                        </thead>
+                        <!--                    <tfoot>-->
+                        <!--                    <tr>-->
+                        <!--                        <td></td>-->
+                        <!--                    </tr>-->
+                        <!--                    </tfoot>-->
+                        <tbody>
+                        <tr>
+                            <td><a>node/app/login</a></td>
+                            <td><span class="uk-badge">7</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>node/util</a></td>
+                            <td><span class="uk-badge">4</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>node/wrapper</a></td>
+                            <td><span class="uk-badge">4</span></td>
+                        </tr>
+                        <tr>
+                            <td><a>node/http</a></td>
+                            <td><span class="uk-badge">3</span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+<footer id="page-footer" class="uk-margin-top" uk-sticky>
+    <div class="uk-container uk-padding-small">
+        <p class="uk-text-small center">
+            generated by
+            <a href="https://github.com/" target="_blank">Dependency Analyser</a>
+            at Thu May 28 2020 01:49:20 GMT+0200 (GMT+02:00)
+        </p>
+    </div>
+</footer>
+</body>
+</html>

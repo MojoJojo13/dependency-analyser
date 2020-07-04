@@ -3,6 +3,7 @@ import * as path from "path";
 import {Declaration, ImportDeclaration} from "./Declarations";
 import {DependencyAnalyser} from "./DependencyAnalyser";
 import {printChildren} from "./util";
+import {ImportCount} from "./presentation/Counter";
 
 export class ImportScanner {
 
@@ -18,13 +19,13 @@ export class ImportScanner {
         this.fileName = fileName;
         this.source = source;
 
-        printChildren(source);
-        console.log("-------------------");
-        this.scanSource(source);
+        // printChildren(source);
+        // console.log("-------------------");
+        this.scanSource(source, source);
         console.log("-------------------");
     }
 
-    scanSource(node: ts.Node) {
+    scanSource(node: ts.Node, sourceFile: ts.SourceFile) {
         const that = this;
 
         node.forEachChild(child => {
@@ -36,22 +37,26 @@ export class ImportScanner {
                     // find and set the SourceFile
                     const importSpecifier = importDeclaration.getModuleSpecifier();
 
-                    // is it a local module which starts with '../ or './'
+                    // is it a local module, which starts with '../' or './' ?
                     if (RegExp('^(\\.\\.\\/)|^(\\.\\/)').test(importSpecifier)) {
                         const dtsFileName = path.join(path.dirname(this.fileName), importSpecifier) + ".d.ts";
                         const sourceFile = this.dependencyAnalyser.dtsCreator.exportSourceFileMap.get(dtsFileName);
 
-                        console.assert(sourceFile, "SourceFile not found or not existing");
-
-                        importDeclaration.sourceFile = sourceFile;
+                        // console.assert(sourceFile, "SourceFile not found or not existing");
+                        if (sourceFile) {
+                            importDeclaration.sourceFile = sourceFile;
+                        }
                     } else {
+                        // let sourceFile = this.dependencyAnalyser.getModuleSourceFile(importSpecifier);
+                        // if (!sourceFile) return; // TODO: Cant' handle default imports
+                        // importDeclaration.sourceFile = sourceFile;
 
-                        let sourceFile = this.dependencyAnalyser.getModuleSourceFile(importSpecifier);
-                        if (!sourceFile) return; // TODO: Cant' handle default imports
-                        importDeclaration.sourceFile = sourceFile;
+                        // console.log("HERE YOU CAN COUNT +1 on DEPENDENCY: ", importSpecifier);
+                        let importCount = new ImportCount(this.fileName, importDeclaration, sourceFile);
+                        this.dependencyAnalyser.countService.addImportCount(importCount);
 
                         // FUN WITH COUNT
-                        console.log("sourceFile.getCountMemberMap()", sourceFile.getCountMemberMap());
+                        // console.log("sourceFile.getCountMemberMap()", sourceFile.getCountMemberMap());
 
                     }
 
@@ -68,28 +73,28 @@ export class ImportScanner {
 
                     break;
 
-                case ts.SyntaxKind.VariableDeclarationList:
-                    handleVariableDeclarationList(<ts.VariableDeclarationList>child, this.importMap);
-                    break;
-
-                case ts.SyntaxKind.PropertyAccessExpression:
-                    handlePropertyAccessExpression(<ts.PropertyAccessExpression>child, this.importMap);
-                    break;
-
-                case ts.SyntaxKind.CallExpression:
-                    handleCallExpression(<ts.CallExpression>child, this.importMap);
-                    break;
-
-                case ts.SyntaxKind.ImportEqualsDeclaration: // Not supported for now
-                    console.error(`Not supported: ${ts.SyntaxKind[child.kind]} (${child.kind})`);
-                    break;
-
-                case ts.SyntaxKind.EndOfFileToken: // Ignore
-                    break;
+                // case ts.SyntaxKind.VariableDeclarationList:
+                //     handleVariableDeclarationList(<ts.VariableDeclarationList>child, this.importMap);
+                //     break;
+                //
+                // case ts.SyntaxKind.PropertyAccessExpression:
+                //     handlePropertyAccessExpression(<ts.PropertyAccessExpression>child, this.importMap);
+                //     break;
+                //
+                // case ts.SyntaxKind.CallExpression:
+                //     handleCallExpression(<ts.CallExpression>child, this.importMap);
+                //     break;
+                //
+                // case ts.SyntaxKind.ImportEqualsDeclaration: // Not supported for now
+                //     console.error(`Not supported: ${ts.SyntaxKind[child.kind]} (${child.kind})`);
+                //     break;
+                //
+                // case ts.SyntaxKind.EndOfFileToken: // Ignore
+                //     break;
 
                 default:
-                    console.log(`Can't handle this: ${ts.SyntaxKind[child.kind]} (${child.kind})`);
-                    that.scanSource(child);
+                    // console.log(`Can't handle this: ${ts.SyntaxKind[child.kind]} (${child.kind})`);
+                    that.scanSource(child, sourceFile);
                     break;
             }
         })
@@ -304,7 +309,7 @@ function handlePropertyAccessExpression(
         let typeNameText = identifier.escapedText.toString();
 
         return checkForPropertyCallOnImportedObject(typeNameText, propertyName, variableMap);
-    } else if(ts.isElementAccessExpression(expression)) {
+    } else if (ts.isElementAccessExpression(expression)) {
         console.log("expression", expression);
     } else {
         console.error(expression);

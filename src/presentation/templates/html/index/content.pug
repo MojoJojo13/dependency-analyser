@@ -1,0 +1,81 @@
+extends ../base.pug
+
+block scripts
+    script.
+        window.onload = function () {
+            var chartData = !{JSON.stringify(chartData)};
+            if (chartData) {
+                google.charts.load("current", {packages: ["corechart"]});
+                google.charts.setOnLoadCallback(drawChart);
+
+                function drawChart() {
+                    chartData.forEach(value => {
+                        var data = google.visualization.arrayToDataTable(value.data);
+                        var view = new google.visualization.DataView(data);
+                        var chart = new google.visualization.PieChart(document.getElementById(value.elementId));
+                        var options = {
+                            // legend: 'none',
+                            // title: 'My Daily Activities',
+                            height: 300,
+                            legend: {position: 'bottom', maxLines: 2},
+                            sliceVisibilityThreshold: .1,
+                            pieHole: 0.4,
+                        }
+                        chart.draw(view, options);
+                    })
+                }
+            }
+        }
+
+block content
+    .uk-grid-divider(class='uk-child-width-1-3@s', uk-grid='')
+        div#dependenciesChart
+        div#nodeModulesChart
+        div#customModulesChart
+    ul(uk-accordion='multiple: true')
+        li.uk-open
+            a.uk-accordion-title(href='#') Dependencies
+            div.uk-accordion-content
+                table.uk-table.uk-table-divider.uk-table-hover.uk-table-small.uk-table-justify
+                    thead
+                        tr
+                            th Module
+                            th NPM Repo
+                            th.uk-table-shrink Imports Count
+                    each val in dependencies
+                        tr
+                            td
+                                a(href='modules/' + val.name + '.html')=val.name
+                            td
+                                span(uk-icon='icon: forward')
+                                a(href='https://www.npmjs.com/package/' + val.name, target='_blank') npm
+                            td
+                                span.uk-badge=val.count
+        li
+            a.uk-accordion-title(href='#') Node Modules
+            div.uk-accordion-content
+                table.uk-table.uk-table-divider.uk-table-hover.uk-table-small.uk-table-justify
+                    thead
+                        tr
+                            th Module
+                            th.uk-table-shrink Imports Count
+                    tbody
+                        tr
+                            td
+                                a path
+                            td
+                                span.uk-badge 11
+        li
+            a.uk-accordion-title(href='#') Custom Modules
+            div.uk-accordion-content
+                table.uk-table.uk-table-divider.uk-table-hover.uk-table-small.uk-table-justify
+                    thead
+                        tr
+                            th Module
+                            th.uk-table-shrink Imports Count
+                    tbody
+                        tr
+                            td
+                                a node/app/login
+                            td
+                                span.uk-badge 7

@@ -3,8 +3,11 @@
 import {ExportScanner, findExportDeclarations} from "./exportService";
 import {ImportScanner} from "./importService";
 
+console.log("HALLO");
+
 console.log('process.argv', process.argv);
 console.log('process.argv', process.argv.slice(2));
+
 
 import * as fs from "fs";
 import * as path from "path";
@@ -12,26 +15,36 @@ import * as ts from "typescript";
 import {FileHandler} from "./fileHandler";
 import {DependencyAnalyser} from "./DependencyAnalyser";
 
-
-let sPath = "C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server\\src\\node\\entry.ts";
+let outputPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\dependency-analysis";
+let sPath = "C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server\\src";
 // let sPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\tests\\cases\\imports.ts";
 // let sPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\dist\\exports.d.ts";
 // let sPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\dist\\exportService.d.ts";
 // let sPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\node_modules\\typescript\\lib\\typescript.d.ts";
 // let sPath = "C:\\Users\\Paul\\WebstormProjects\\local-consumer\\src\\simpleImport.ts";
-//let sPath = path.join(path.dirname(process.argv[1]), "../../../", process.argv[2]);
+// let sPath = path.join(path.dirname(process.argv[1]), "../../../", process.argv[2]);
 console.log("sPath", sPath);
 
-const rootNode = ts.createSourceFile(
-    'simpleImport.ts', // fileName
-    fs.readFileSync(sPath, 'utf8'), // sourceText
-    ts.ScriptTarget.Latest, // languageVersion
-    false
-);
-
 let dependencyAnalyser = new DependencyAnalyser(sPath);
+console.log("allFiles", dependencyAnalyser.allFiles);
 dependencyAnalyser.initDtsCreator();
+console.log("Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys())", Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys()));
 dependencyAnalyser.scanAllFiles();
+// console.log(dependencyAnalyser.countService.importCounts);
+// console.log(dependencyAnalyser.countService.groupByFileName());
+console.log(dependencyAnalyser.countService.groupByDependencyName());
+dependencyAnalyser.countService.generateOutput(sPath, outputPath);
+
+// const rootNode = ts.createSourceFile(
+//     'simpleImport.ts', // fileName
+//     fs.readFileSync(sPath, 'utf8'), // sourceText
+//     ts.ScriptTarget.Latest, // languageVersion
+//     false
+// );
+
+// let dependencyAnalyser = new DependencyAnalyser(sPath);
+// dependencyAnalyser.initDtsCreator();
+// dependencyAnalyser.scanAllFiles();
 
 // let pathToModule1 = require.resolve("typescript");
 // console.log("pathToModule1", pathToModule1);
@@ -60,7 +73,7 @@ dependencyAnalyser.scanAllFiles();
 //     false
 // );
 // printChildren(rootNodeImports);
-console.log("----------------------------------------------------------------------------------------------------");
+// console.log("----------------------------------------------------------------------------------------------------");
 // let importScanner = new ImportScanner(rootNode);
 
 // Run the compiler
@@ -106,8 +119,3 @@ console.log("-------------------------------------------------------------------
 //     //     console.log(createdFiles[dts])
 //     // })
 // }
-
-
-export function add(x: number, y: number) {
-    return x + y;
-}

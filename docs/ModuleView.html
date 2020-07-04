@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../src/presentation/templates/uikit/uikit.min.css"/>
+    <script src="../src/presentation/templates/uikit/uikit.min.js"></script>
+    <script src="../src/presentation/templates/uikit/uikit-icons.min.js"></script>
+<!--    &lt;!&ndash; Chart.js &ndash;&gt;-->
+<!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>-->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load("current", {packages:["corechart"]});
+        google.charts.setOnLoadCallback(drawChart);
+        function drawChart() {
+            var data = google.visualization.arrayToDataTable([
+                ["", "@coder/logger", 'child_process', 'extra', 'tar-fs', 'limiter', 'adm-uip'],
+                ["", 12, 6, 8, 2, 1, 1]
+            ]);
+
+            var view = new google.visualization.DataView(data);
+
+            var options = {
+                title: "Import Distribution",
+                // width: 600,
+                // height: 100,
+                bar: {groupWidth: "40%"},
+                hAxis: {format: '0'},
+                legend: { position: 'top', maxLines: 3 },
+                isStacked: true,
+                series: {
+                    0: {color: '#1e87f0'},
+                    1: {color: 'grey'},
+                    2: {color: 'grey'},
+                    3: {color: 'grey'},
+                    4: {color: 'grey'},
+                    5: {color: 'grey'}
+                }
+            };
+            var chart = new google.visualization.BarChart(document.getElementById("barchart_values"));
+            chart.draw(view, options);
+        }
+    </script>
+
+    <style>
+        /* fix Google Chart tooltip flicker */
+        svg > g > g:last-child { pointer-events: none }
+
+        li {
+            color: grey;
+        }
+    </style>
+    <style>
+        ul, #myUL {
+            list-style-type: none;
+        }
+
+        #myUL {
+            margin: 0;
+            padding: 0;
+        }
+
+        .caret {
+            cursor: pointer;
+            -webkit-user-select: none; /* Safari 3.1+ */
+            -moz-user-select: none; /* Firefox 2+ */
+            -ms-user-select: none; /* IE 10+ */
+            user-select: none;
+        }
+
+        .caret::before {
+            content: "\25B6";
+            color: black;
+            display: inline-block;
+            margin-right: 6px;
+            font-family: Verdana, Arial, Helvetica, sans-serif;
+        }
+
+        .caret-down::before {
+            -ms-transform: rotate(90deg); /* IE 9 */
+            -webkit-transform: rotate(90deg); /* Safari */
+        ' transform: rotate(90 deg);
+        }
+
+        .nested {
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="uk-background-muted">
+<div class="uk-container uk-background-default">
+    <ul class="uk-breadcrumb">
+        <li><a href="Dashboard.html">Overview</a></li>
+        <li><span>@coder/logger</span></li>
+    </ul>
+<!--    <div style="width: max-content; height: 200px">-->
+<!--        <canvas id="canvas" width="1200px" height="200"></canvas>-->
+<!--    </div>-->
+    <div id="barchart_values"></div>
+    <ul>
+        <li><span class="caret">common</span>
+            <ul class="nested">
+                <li>api.ts</li>
+                <li>emitter.ts</li>
+                <li>http.ts</li>
+                <li><a>util.ts</a></li>
+            </ul>
+        </li>
+        <li><span class="caret">node</span>
+            <ul class="nested">
+                <li><span class="caret">app</span>
+                    <ul class="nested">
+                        <li><a href="CodeView.html">api.ts</a> <span uk-icon="icon: reply"></span> <span>{ field, logger }</span></li>
+                        <li>bin.ts</li>
+                        <li>dashboard.ts</li>
+                        <li>login.ts</li>
+                        <li>proxy.ts</li>
+                        <li><a>static.ts</a> <span>{ * }</span></li>
+                        <li><a>update.ts</a> <span>{ Application, ApplicationsResponse, ClientMessage, RecentResponse, ServerMessage, SessionError, SessionRespons, Application, ApplicationsResponse, ClientMessage, RecentResponse, ServerMessage, SessionError, SessionRespons }</span></li>
+                        <li><a>vscode.ts</a></li>
+                    </ul>
+                </li>
+                <li><a>cli.ts</a></li>
+                <li><a>entry.ts</a></li>
+                <li><a>http.ts</a></li>
+                <li><a>settings.ts</a></li>
+                <li>socket.ts</li>
+                <li>util.ts</li>
+                <li><a>wrapper.ts</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+<script>
+    Array.from(document.getElementsByClassName("caret")).forEach(value => {
+        value.addEventListener("click", function () {
+            this.parentElement.querySelector(".nested").classList.toggle("active");
+            this.classList.toggle("caret-down");
+        });
+
+        value.parentElement.querySelector(".nested").classList.toggle("active");
+        value.classList.toggle("caret-down");
+    })
+</script>
+<script>
+    var ctx = document.getElementById('canvas').getContext('2d');
+    window.myBar = new Chart(ctx, {
+        type: 'horizontalBar',
+        data: {
+            labels: [
+                "Usage"
+            ],
+            datasets: [{
+                label: '@coder/logger',
+                backgroundColor: "rgb(255, 99, 132)", //red
+                data: [12]
+            }, {
+                label: 'child_process',
+                backgroundColor: "rgb(201, 203, 207)", //grey
+                data: [6]
+            }, {
+                label: 'extra',
+                backgroundColor: "rgb(201, 203, 207)", //grey
+                data: [8]
+            }, {
+                label: 'limiter',
+                backgroundColor: "rgb(201, 203, 207)", //grey
+                data: [1]
+            }, {
+                label: 'tar-fs',
+                backgroundColor: "rgb(201, 203, 207)", //grey
+                data: [2]
+            }, {
+                label: 'adm-uip',
+                backgroundColor: "rgb(201, 203, 207)", //grey
+                data: [1]
+            }]
+        },
+        options: {
+            title: {
+                display: true,
+                text: 'Dependencies distribution'
+            },
+            tooltips: {
+                mode: 'index',
+                intersect: false
+            },
+            responsive: true,
+            scales: {
+                xAxes: [{
+                    stacked: true,
+                }],
+                yAxes: [{
+                    stacked: true
+                }]
+            }
+        }
+    });
+</script>
+</body>
+</html>

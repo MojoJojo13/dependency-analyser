@@ -1,0 +1,116 @@
+extends ../base.pug
+
+block scripts
+    script.
+        window.onload = function () {
+            Array.from(document.getElementsByClassName("caret")).forEach(value => {
+                value.addEventListener("click", function () {
+                    this.parentElement.querySelector(".nested").classList.toggle("active");
+                    this.classList.toggle("caret-down");
+                });
+
+                value.parentElement.querySelector(".nested").classList.toggle("active");
+                value.classList.toggle("caret-down");
+            })
+
+        // var chartData =
+        !{JSON.stringify(chartData)};
+            // if (chartData) {
+            //     google.charts.load("current", {packages: ["corechart"]});
+            //     google.charts.setOnLoadCallback(drawChart);
+            //
+            //     function drawChart() {
+            //         chartData.forEach(value => {
+            //             var data = google.visualization.arrayToDataTable(value.data);
+            //             var view = new google.visualization.DataView(data);
+            //             var chart = new google.visualization.PieChart(document.getElementById(value.elementId));
+            //             var options = {
+            //                 // legend: 'none',
+            //                 // title: 'My Daily Activities',
+            //                 height: 300,
+            //                 legend: {position: 'bottom', maxLines: 2},
+            //                 sliceVisibilityThreshold: .1,
+            //                 pieHole: 0.4,
+            //             }
+            //             chart.draw(view, options);
+            //         })
+            //     }
+            // }
+        }
+
+block content
+    ul.uk-breadcrumb
+        li
+            a(href='../index.html') Overview
+        li
+            span #{moduleName}
+    div#barchart_values
+    mixin buildTree(tree, isNested)
+        ul(class= isNested ? 'nested' : 'uk')
+            each val, key in tree
+                if val.children
+                    li
+                        span.caret= key
+                        +buildTree(val.children, true)
+                else
+                    if val.adds
+                        li
+                            a(href=val.adds.link)= key
+                            |
+                            |
+                            span= '{ ' + val.adds.imports.join(', ') + ' }'
+                    else
+                        li= key
+
+    +buildTree(filesTree, false)
+    //ul
+    //    each val, key in filesTree
+    //        if val.children
+    //            li
+    //                span.caret= key
+    //                +buildTree(val.children)
+    //        else
+    //            li=key
+    //ul
+    //    li
+    //        span.caret common
+    //        ul.nested
+    //            li api.ts
+    //            li emitter.ts
+    //            li http.ts
+    //            li
+    //                a util.ts
+    //    li
+    //        span.caret node
+    //        ul.nested
+    //            li
+    //                span.caret app
+    //                ul.nested
+    //                    li
+    //                        a(href='CodeView.html') api.ts
+    //                        span { field, logger }
+    //                    li bin.ts
+    //                    li dashboard.ts
+    //                    li login.ts
+    //                    li proxy.ts
+    //                    li
+    //                        a static.ts
+    //                        span { * }
+    //                    li
+    //                        a update.ts
+    //                        span
+    //                            | { Application, ApplicationsResponse, ClientMessage, RecentResponse, ServerMessage, SessionError, SessionRespons, Application, ApplicationsResponse, ClientMessage, RecentResponse, ServerMessage, SessionError, SessionRespons }
+    //                    li
+    //                        a vscode.ts
+    //            li
+    //                a cli.ts
+    //            li
+    //                a entry.ts
+    //            li
+    //                a http.ts
+    //            li
+    //                a settings.ts
+    //            li socket.ts
+    //            li util.ts
+    //            li
+    //                a wrapper.ts

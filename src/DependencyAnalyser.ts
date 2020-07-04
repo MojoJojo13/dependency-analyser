@@ -5,8 +5,16 @@ import {DtsCreator} from "./DtsCreator";
 import {ImportScanner} from "./importService";
 import {ExportScanner} from "./exportService";
 import {SourceFile} from "./exportDeclarations";
+import {CountService} from "./presentation/CountService";
 
 export class DependencyAnalyser {
+    get countService(): CountService {
+        return this._countService;
+    }
+
+    set countService(value: CountService) {
+        this._countService = value;
+    }
 
     get moduleSourceFileMap(): Map<string, SourceFile> {
         return this._moduleSourceFileMap;
@@ -69,23 +77,34 @@ export class DependencyAnalyser {
     private _isFile: boolean;
     private _dtsCreator: DtsCreator;
     private _allFiles: string[];
+    filesTree: Map<string, object>;
     private _importScannerMap: Map<string, ImportScanner>;
     private _moduleExportScannerMap: Map<string, ExportScanner>;
     private _moduleSourceFileMap: Map<string, SourceFile>;
+    private _countService: CountService;
 
     constructor(srcPath: string) {
         this.moduleExportScannerMap = new Map<string, ExportScanner>();
         this.moduleSourceFileMap = new Map<string, SourceFile>();
+        this._countService = new CountService(this);
 
         if (fs.existsSync(srcPath)) {
             let lstatSync = fs.lstatSync(srcPath);
 
             if (lstatSync.isDirectory()) {
+
                 this.isDirectory = true;
                 this.allFiles = this.getAllFilesFlat(srcPath);
+                this.filesTree = this.getAllFilesAsTree(srcPath);
+
             } else if (lstatSync.isFile()) {
-                this.isFile = true;
-                this.allFiles = [srcPath];
+
+                // handle only Typescript Files
+                if (path.extname(srcPath) === "ts") {
+                    this.isFile = true;
+                    this.allFiles = [srcPath];
+                }
+
             } else {
                 throw "not a file or a folder: " + srcPath;
             }
@@ -138,6 +157,30 @@ export class DependencyAnalyser {
                     console.log("ERROR: not a File of Folder");
                 }
             })
+        }
+    }
+
+    getAllFilesAsTree(directory: string) {
+        return getAllFilesAsTreeRek(directory);
+
+        function getAllFilesAsTreeRek(directory: string) {
+            let directoryItems = fs.readdirSync(directory);
+            let filesArray = new Map<string, object>();
+
+            directoryItems.forEach(value => {
+                const fileName = path.join(directory, value);
+                let lstatSync = fs.lstatSync(fileName);
+
+                if (lstatSync.isDirectory()) {
+                    filesArray.set(fileName, getAllFilesAsTreeRek(fileName));
+                } else if (lstatSync.isFile()) {
+                    filesArray.set(fileName, null);
+                } else {
+                    console.log("ERROR: not a File of Folder");
+                }
+            });
+
+            return filesArray;
         }
     }
 
