@@ -17,6 +17,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^13.13.4",
+    "package-size": "^2.3.0",
     "pug": "^3.0.0",
     "tsify": "^4.0.1",
     "tslint": "^6.1.2",

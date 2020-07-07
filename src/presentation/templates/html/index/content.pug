@@ -15,7 +15,7 @@ block scripts
                         var chart = new google.visualization.PieChart(document.getElementById(value.elementId));
                         var options = {
                             // legend: 'none',
-                            // title: 'My Daily Activities',
+                            title: value.title,
                             height: 300,
                             legend: {position: 'bottom', maxLines: 2},
                             sliceVisibilityThreshold: .1,
@@ -47,7 +47,7 @@ block content
                             td
                                 a(href='modules/' + val.name + '.html')=val.name
                             td
-                                span(uk-icon='icon: forward')
+                                //span(uk-icon='icon: forward')
                                 a(href='https://www.npmjs.com/package/' + val.name, target='_blank') npm
                             td
                                 span.uk-badge=val.count
@@ -58,13 +58,18 @@ block content
                     thead
                         tr
                             th Module
+                            th NPM Repo
                             th.uk-table-shrink Imports Count
                     tbody
-                        tr
-                            td
-                                a path
-                            td
-                                span.uk-badge 11
+                        each val in nodeModules
+                            tr
+                                td
+                                    a(href='modules/' + val.name + '.html')=val.name
+                                td
+                                    //span(uk-icon='icon: forward')
+                                    a(href='https://www.npmjs.com/package/' + val.name, target='_blank') npm
+                                td
+                                    span.uk-badge=val.count
         li
             a.uk-accordion-title(href='#') Custom Modules
             div.uk-accordion-content
@@ -75,7 +80,10 @@ block content
                             th.uk-table-shrink Imports Count
                     tbody
                         tr
-                            td
-                                a node/app/login
-                            td
-                                span.uk-badge 7
+                            td no data
+                        // each val in customModules
+                        //     tr
+                        //         td
+                        //             val.name //a(href='modules/' + val.name + '.html')=val.name
+                        //         td
+                        //             span.uk-badge=val.count

@@ -46,13 +46,19 @@ export class ImportScanner {
                         if (sourceFile) {
                             importDeclaration.sourceFile = sourceFile;
                         }
+
+                        // NEEDS TO BE HANDLED SEPARATELY
+                        // let importCount = new ImportCount(this.fileName, importDeclaration, undefined, false, true);
+                        // this.dependencyAnalyser.countService.addImportCount(importCount);
                     } else {
+                        const options = { paths: ["C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server"] }; // FixMe: make it dynamic
+                        const modulePath = require.resolve(importDeclaration.getModuleSpecifier(), options)
+                        const isNodeModule = !path.isAbsolute(modulePath);
+
                         // let sourceFile = this.dependencyAnalyser.getModuleSourceFile(importSpecifier);
-                        // if (!sourceFile) return; // TODO: Cant' handle default imports
                         // importDeclaration.sourceFile = sourceFile;
 
-                        // console.log("HERE YOU CAN COUNT +1 on DEPENDENCY: ", importSpecifier);
-                        let importCount = new ImportCount(this.fileName, importDeclaration, sourceFile);
+                        let importCount = new ImportCount(this.fileName, importDeclaration, sourceFile, isNodeModule, false);
                         this.dependencyAnalyser.countService.addImportCount(importCount);
 
                         // FUN WITH COUNT

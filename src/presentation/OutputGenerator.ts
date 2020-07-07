@@ -12,60 +12,33 @@ const indexHtml = baseHTML.replace("$CONTENT$", "<div class=\"uk-container\">\n<
 export class OutputGenerator {
 
     static generateHTML(countService: CountService, sPath: string, rootPath: string, filesTree: Map<string, object>) {
-        let dependencyFileNameMap = countService.groupByFileName();
-        let dependencyNameMap = countService.groupByDependencyName();
+        const date: Date = new Date();
+        const dependencyFileNameMap = countService.groupByFileName();
+        const dependencyNameMap = countService.groupByDependencyName();
 
-        // INDEX
-        // dependencyNameMap.forEach((value, key) => {
-        //     content += `<li>\n<a class="uk-accordion-title" href="#">${key} <span class="uk-badge">${value.length}</span></a>\n<div class="uk-accordion-content"><ul class="uk-list uk-list-disc">`;
-        //     value.forEach(importCount => {
-        //         let shortFileName = importCount.fileName.replace(sPath, "");
-        //         let htmlFileName = path.join("details", shortFileName) + ".html";
-        //         content += `<li><a href="${htmlFileName}">${shortFileName}</a></li>\n`;
-        //     })
-        //     content += "</ul></div></li>";
-        // });
-        //
-        // const outputHTML = indexHtml.replace("$CONTENT$", content);
-        const outputHTML = this.generateIndex(dependencyNameMap);
         this.cleanRootFolder(rootPath);
         this.createComplements(rootPath);
+
+        // INDEX
+        const outputHTML = this.generateIndex(dependencyNameMap, date);
         this.createHtmlFile(path.join(rootPath, "index.html"), outputHTML);
 
         // FILES
         dependencyFileNameMap.forEach((value, key) => {
-            let shortFileName = key.replace(sPath, ""); //.replace("\.ts", ".html");
+            const shortFileName = key.replace(sPath, "");
             const fileName = path.join(rootPath, "details", shortFileName) + ".html";
-            console.log("fileName", fileName);
-            // this.createHtmlFile(fileName, JSON.stringify(value, null, '\t'));
+
             this.createHtmlFile(fileName, this.generateFileContent(value));
         });
 
         // MODULES
-        dependencyNameMap.forEach(importCountArray => {
-            importCountArray.forEach(importCount => {
-                const fileName = path.join(rootPath, "modules", importCount.dependencyName) + ".html";
-                let content = this.generateModules(importCount, filesTree);
-                // let content: string = "";
-                //
-                // createHTMLFileTreeRek(filesTree);
-                this.createHtmlFile(fileName, content);
-                //
-                // function createHTMLFileTreeRek (filesMap: Map<string, object>) {
-                //     content += "<ul>";
-                //     filesMap.forEach((value, key) => {
-                //         if (value) { // it's a folder
-                //             content += `<li>${path.parse(key).base}`;
-                //             createHTMLFileTreeRek(<Map<string, object>>value);
-                //             content += `</li>`;
-                //         } else { // it's a file
-                //             content += `<li>${path.parse(key).base}</li>`
-                //         }
-                //     })
-                //     content += "</ul>"
-                // }
-            })
+        dependencyNameMap.forEach((importCountArray, dependencyName) => {
+            const fileName = path.join(rootPath, "modules", dependencyName) + ".html";
+            const content = this.generateModules(dependencyName, importCountArray, filesTree, date);
 
+            this.createHtmlFile(fileName, content);
+
+            // console.log("require.resolve", require.resolve(dependencyName, {paths: ["C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server"]}));
         });
 
     }
@@ -104,7 +77,7 @@ export class OutputGenerator {
         return baseHTML.replace("$CONTENT$", abc);
     }
 
-    static createComplements(sPath: string) {
+    static createComplements(sPath: string): void {
         const files = [
             "src\\presentation\\templates\\uikit\\uikit.min.css",
             "src\\presentation\\templates\\uikit\\uikit.min.js",
@@ -118,101 +91,134 @@ export class OutputGenerator {
             const destination = path.join(sPath, path.parse(value).base);
 
             fs.copyFileSync(source, destination);
-        })
-
+        });
     }
 
-    static generateIndex(dependencies: Map<string, ImportCount[]>) {
+    static generateIndex(dependencies: Map<string, ImportCount[]>, date: Date): any {
         // Compile the source code
         const compiledFunction = pug.compileFile('src/presentation/templates/html/index/content.pug');
+        const dependencyData = [];
+        const nodeModulesData = [];
+        // const customModulesData = [];
         const chartData = [{
             elementId: "dependenciesChart",
+            title: "Dependency Imports",
+            data: [["", ""]]
+        }, {
+            elementId: "nodeModulesChart",
+            title: "Node Module Imports",
+            data: [["", ""]]
+        }, {
+            elementId: "customModulesChart",
+            title: "Custom Module Imports",
             data: [["", ""]]
         }];
 
         // Prepare data
-        let dependencyData = [];
+
         dependencies.forEach((value, key) => {
-            dependencyData.push({name: key, count: value.length});
+            if (value[0].isNodeModule) {
+                nodeModulesData.push({name: key, count: value.length});
+            } else {
+                // if (value[0].isCustomImport) {
+                //     customModulesData.push({name: key, count: value.length});
+                // } else {
+                //
+                // }
+                dependencyData.push({name: key, count: value.length});
+            }
         });
 
         dependencyData.sort((a, b) => {
             return b.count - a.count;
         });
 
+        nodeModulesData.sort((a, b) => {
+            return b.count - a.count;
+        });
+
+        // customModulesData.sort((a, b) => {
+        //     return b.count - a.count;
+        // });
+
         dependencyData.forEach(value => {
             chartData[0].data.push([value.name, value.count]);
         });
+
+        nodeModulesData.forEach(value => {
+            chartData[1].data.push([value.name, value.count]);
+        });
+
+        // customModulesData.forEach(value => {
+        //     chartData[2].data.push([value.name, value.count]);
+        // });
 
         // Render a set of data
         return compiledFunction({
             title: 'Overview',
             folder: './',
             chartData: chartData,
-            dependencies: dependencyData
+            dependencies: dependencyData,
+            nodeModules: nodeModulesData,
+            // customModules: customModulesData,
+            date: date
         });
     }
 
-    static generateModules(importCount: ImportCount, filesTree: Map<string, object>) {
+    static generateModules(dependencyName: string, importCountArray: ImportCount[], filesTree: Map<string, object>, date: Date): any {
         // Compile the source code
         const compiledFunction = pug.compileFile('src/presentation/templates/html/module/module.pug');
-
-        let x = {
-            "common": {
-                children: {
-                    "api.ts": {},
-                    "emitter.ts": {},
-                    "http.ts": {},
-                    "util.ts": {
-                        adds: {
-                            link: "../details/common/util.ts.html",
-                            imports: ["*"]
-                        }
-                    }
-                }
-            },
-            "node": {
-                children: {
-                    "app": {
-                        children: {
-                            "api.ts": {
-                                adds: {
-                                    link: "../details/node/app/api.ts.html",
-                                    imports: ["field", "logger"]
-                                }
-                            },
-                            "bin.ts": {},
-                            "dashboard.ts": {},
-                            "login.ts": {},
-                            "proxy.ts": {},
-                            "static.ts": {},
-                            "update.ts": {
-                                adds: {
-                                    link: "../details/node/app/update.ts.html",
-                                    imports: ["Application", "ApplicationsResponse", "ClientMessage", "RecentResponse", "ServerMessage", "SessionError", "SessionRespons", "Application", "ApplicationsResponse", "ClientMessage", "RecentResponse", "ServerMessage", "SessionError", "SessionRespons"]
-                                }
-                            },
-                            "vscode.ts": {}
-                        }
-                    },
-                    "cli.ts": {},
-                    "entry.ts": {},
-                    "http.ts": {},
-                    "settings.ts": {},
-                    "socket.ts": {},
-                    "util.ts": {},
-                    "wrapper.ts": {}
-                }
-            }
-        }
-
+        const slashCount = (dependencyName.match(/\//g) || []).length;
+        // Prepare Data
+        const convertedData = transformDataRek(filesTree, "dependency-analysis/details");
         // Render a set of data
         return compiledFunction({
-            title: 'Module: ' + importCount.dependencyName,
-            moduleName: importCount.dependencyName,
-            folder: '../',
-            filesTree: x
+            title: 'Module: ' + dependencyName,
+            moduleName: dependencyName,
+            folder: '../'.repeat(slashCount + 1),
+            filesTree: convertedData,
+            date: date
         });
+
+        // Transforms the files tree map to an object with all necessary info for the frontend
+        function transformDataRek(filesTree: Map<string, object>, combinedPath: string) {
+            let dataObj = {};
+            // let foundAtLeastOneEntry = false;
+
+            filesTree.forEach((value, key) => {
+                const extension = path.parse(key).ext;
+                if (extension && extension !== ".ts") return; // remove non .ts files
+
+                const shortName = path.parse(key).base;
+                dataObj[shortName] = {};
+
+                if (value) { // check if it's a folder
+                    // foundAtLeastOneEntry = true;
+                    let subfolders = transformDataRek(<Map<string, object>>value, path.join(combinedPath, shortName));
+                    if (Object.keys(subfolders).length) { // folder not empty
+                        dataObj[shortName].children = subfolders;
+                    } else { // folder is empty
+                        delete dataObj[shortName];
+                    }
+                }
+
+                let usedImport = importCountArray.find(element => element.fileName === key);
+                if (usedImport) {
+                    // foundAtLeastOneEntry = true;
+
+                    dataObj[shortName].adds = {
+                        "link": path.join("../".repeat(slashCount + 2), combinedPath, shortName) + ".html",
+                        "imports": usedImport.importDeclaration.isEntireModuleImported() ?
+                            ["*"] : usedImport.importDeclaration.getImportSpecifiers()
+                    }
+                }
+            });
+
+            // return foundAtLeastOneEntry ? dataObj : undefined;
+            return dataObj;
+        }
+
+
     }
 
 }

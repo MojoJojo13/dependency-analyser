@@ -3,8 +3,6 @@
 import {ExportScanner, findExportDeclarations} from "./exportService";
 import {ImportScanner} from "./importService";
 
-console.log("HALLO");
-
 console.log('process.argv', process.argv);
 console.log('process.argv', process.argv.slice(2));
 
@@ -28,11 +26,11 @@ console.log("sPath", sPath);
 let dependencyAnalyser = new DependencyAnalyser(sPath);
 console.log("allFiles", dependencyAnalyser.allFiles);
 dependencyAnalyser.initDtsCreator();
-console.log("Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys())", Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys()));
+// console.log("Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys())", Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys()));
 dependencyAnalyser.scanAllFiles();
 // console.log(dependencyAnalyser.countService.importCounts);
 // console.log(dependencyAnalyser.countService.groupByFileName());
-console.log(dependencyAnalyser.countService.groupByDependencyName());
+// console.log(dependencyAnalyser.countService.groupByDependencyName());
 dependencyAnalyser.countService.generateOutput(sPath, outputPath);
 
 // const rootNode = ts.createSourceFile(

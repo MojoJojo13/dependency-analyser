@@ -102,6 +102,12 @@ export class ImportDeclaration extends Declaration {
         return `FileName: ${this.fileName}`;
     }
 
+    isEntireModuleImported(): boolean {
+        return this.node.importClause
+            && this.node.importClause.namedBindings
+            && ts.isNamespaceImport(this.node.importClause.namedBindings);
+    }
+
     getImportSpecifiers(): string[] {
         let importSpecifiers: string[] = [];
         let importClause = <ts.ImportClause>this.node.importClause;

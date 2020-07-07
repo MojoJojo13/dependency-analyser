@@ -14,12 +14,16 @@ export class ImportCount implements Count {
     // dependencyName: string;
     importDeclaration: ImportDeclaration;
     sourceFile: ts.SourceFile;
+    isNodeModule: boolean;
+    isCustomImport: boolean;
 
-    constructor(fileName: string, importDeclaration: ImportDeclaration, sourceFile: ts.SourceFile) {
+    constructor(fileName: string, importDeclaration: ImportDeclaration, sourceFile: ts.SourceFile, isNodeModule: boolean, isCustomImport: boolean) {
         this.fileName = fileName;
         // this.dependencyName = dependencyName;
         this.importDeclaration = importDeclaration;
         this.sourceFile = sourceFile;
+        this.isNodeModule = isNodeModule;
+        this.isCustomImport = isCustomImport;
     }
 
     get dependencyName() {
