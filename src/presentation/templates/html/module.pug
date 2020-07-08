@@ -1,4 +1,4 @@
-extends ../base.pug
+extends base.pug
 
 block scripts
     script.
@@ -13,8 +13,8 @@ block scripts
                 value.classList.toggle("caret-down");
             })
 
-        // var chartData =
-        !{JSON.stringify(chartData)};
+            // var chartData =
+            !{JSON.stringify(chartData)};
             // if (chartData) {
             //     google.charts.load("current", {packages: ["corechart"]});
             //     google.charts.setOnLoadCallback(drawChart);
@@ -45,6 +45,7 @@ block content
         li
             span #{moduleName}
     div#barchart_values
+
     mixin buildTree(tree, isNested)
         ul(class= isNested ? 'nested' : 'uk')
             each val, key in tree

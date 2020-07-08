@@ -7,8 +7,12 @@
     "sourceMap": true,
     "outDir": "./dist",
     "strictFunctionTypes": true
-  }
+  },
 //  "include": [
 //    "src/**/*"
-//  ]
+//  ],
+  "exclude": [
+    "node_modules",
+    "dependency-analysis"
+  ]
 }

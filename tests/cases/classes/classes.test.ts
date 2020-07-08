@@ -4,7 +4,7 @@ import {DependencyAnalyser} from "../../../src/DependencyAnalyser";
 
 const expect = chai.expect;
 const fileName = __dirname + "\\imports.ts";
-console.log("fileName", function);
+console.log("fileName");
 
 describe('Test Class Stuff', () => {
 

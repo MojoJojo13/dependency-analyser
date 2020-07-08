@@ -4,10 +4,22 @@ import * as path from "path";
 import {ImportCount} from "./Counter";
 import * as pug from "pug";
 
-// const pug = require('pug');
+const getSizes = require('package-size');
 
-const baseHTML = `<!DOCTYPE html>\n<html><head><meta charset="utf-8"/><link rel=\"stylesheet\" href=\"uikit.min.css"><script src="uikit.min.js"></script></head>\n<body>\n$CONTENT$</body>\n</html>`;
-const indexHtml = baseHTML.replace("$CONTENT$", "<div class=\"uk-container\">\n<ul uk-accordion=\"multiple: true\">\n$CONTENT$</ul></div>");
+const HTML_TEMPLATE_FILES = {
+    "INDEX": "templates/html/index.pug",
+    "MODULE": "templates/html/module.pug",
+    "CODE": "templates/html/code.pug"
+};
+
+const COMPLEMENT_FILES = [
+    "templates\\uikit\\uikit.min.css",
+    "templates\\uikit\\uikit.min.js",
+    "templates\\uikit\\uikit-icons.min.js",
+    "templates\\css\\custom.css",
+    "templates\\js\\custom.js",
+    "templates\\js\\run_prettify.js"
+];
 
 export class OutputGenerator {
 
@@ -20,15 +32,10 @@ export class OutputGenerator {
         this.createComplements(rootPath);
 
         // INDEX
-        const outputHTML = this.generateIndex(dependencyNameMap, date);
-        this.createHtmlFile(path.join(rootPath, "index.html"), outputHTML);
-
-        // FILES
-        dependencyFileNameMap.forEach((value, key) => {
-            const shortFileName = key.replace(sPath, "");
-            const fileName = path.join(rootPath, "details", shortFileName) + ".html";
-
-            this.createHtmlFile(fileName, this.generateFileContent(value));
+        new Promise<any>(resolve => {
+            resolve(this.generateIndex(dependencyNameMap, date));
+        }).then(outputHTML => {
+            this.createHtmlFile(path.join(rootPath, "index.html"), outputHTML);
         });
 
         // MODULES
@@ -37,8 +44,14 @@ export class OutputGenerator {
             const content = this.generateModules(dependencyName, importCountArray, filesTree, date);
 
             this.createHtmlFile(fileName, content);
+        });
 
-            // console.log("require.resolve", require.resolve(dependencyName, {paths: ["C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server"]}));
+        // FILES
+        dependencyFileNameMap.forEach((importCountArray, key) => {
+            const shortFileName = key.replace(sPath, "");
+            const fileName = path.join(rootPath, "details", shortFileName) + ".html";
+
+            this.createHtmlFile(fileName, this.generateFileContent(importCountArray, shortFileName, date));
         });
 
     }
@@ -68,35 +81,19 @@ export class OutputGenerator {
         fs.writeFileSync(sPath, content);
     }
 
-    static generateFileContent(importCounts: ImportCount[]) {
-        let formattedContent = importCounts[0].sourceFile.text
-            .replace(/</gi, "&lt;")
-            .replace(/>/gi, "&gt;");
-        let abc = '<script src=\"https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js\"></script>\n' +
-            '<pre class=\"prettyprint linenums lang-js\">$CONTENT$</pre>'.replace("$CONTENT$", formattedContent);
-        return baseHTML.replace("$CONTENT$", abc);
-    }
-
     static createComplements(sPath: string): void {
-        const files = [
-            "src\\presentation\\templates\\uikit\\uikit.min.css",
-            "src\\presentation\\templates\\uikit\\uikit.min.js",
-            "src\\presentation\\templates\\uikit\\uikit-icons.min.js",
-            "src\\presentation\\templates\\css\\custom.css",
-            "src\\presentation\\templates\\js\\custom.js"
-        ];
 
-        files.forEach(value => {
-            const source = value;
+        COMPLEMENT_FILES.forEach(value => {
+            const source = path.join(__dirname, value);
             const destination = path.join(sPath, path.parse(value).base);
 
             fs.copyFileSync(source, destination);
         });
     }
 
-    static generateIndex(dependencies: Map<string, ImportCount[]>, date: Date): any {
+    static async generateIndex(dependencies: Map<string, ImportCount[]>, date: Date) {
         // Compile the source code
-        const compiledFunction = pug.compileFile('src/presentation/templates/html/index/content.pug');
+        const compiledFunction = pug.compileFile(path.join(__dirname, HTML_TEMPLATE_FILES.INDEX));
         const dependencyData = [];
         const nodeModulesData = [];
         // const customModulesData = [];
@@ -115,7 +112,6 @@ export class OutputGenerator {
         }];
 
         // Prepare data
-
         dependencies.forEach((value, key) => {
             if (value[0].isNodeModule) {
                 nodeModulesData.push({name: key, count: value.length});
@@ -141,8 +137,54 @@ export class OutputGenerator {
         //     return b.count - a.count;
         // });
 
+        let promisesArray = [];
         dependencyData.forEach(value => {
             chartData[0].data.push([value.name, value.count]);
+
+            const nodeModulesPath = "C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server\\node_modules";  // FixMe
+
+            // Calculate sizes of modules
+            promisesArray.push(
+                getSizes(value.name, {
+                    resolve: [nodeModulesPath]
+                }).then(data => {
+                    // data = {
+                    //       name: 'react,react-dom',
+                    //       size: 12023, // in bytes
+                    //       minified: 2342,
+                    //       gzipped: 534,
+                    //       versionedName: 'react@16.0.0,react-dom@16.0.0'
+                    //     }
+
+                    data["sizeOnDisk"] = convertToKb(getSizeOnDiskRek(path.join(nodeModulesPath, data.name)));
+                    data["sizeInKB"] = convertToKb(data.size);
+                    data["minifiedInKB"] = convertToKb(data.minified);
+                    data["gzippedInKB"] = convertToKb(data.gzipped);
+                    value["sizeInfo"] = data;
+
+                    function convertToKb(x: number) {
+                        let xInKb = x / 1024; //TODO: maybe 1024? check it
+                        // return xInKb > 0 ? Math.round(xInKb) : xInKb;
+                        return xInKb > 0 ? (x / 1024).toFixed(1) : xInKb;
+                    }
+
+                    function getSizeOnDiskRek(dirPath: string) {
+                        let size = 0;
+                        let itemStats = fs.lstatSync(dirPath);
+                        if (itemStats.isDirectory()) {
+                            let allSubs = fs.readdirSync(dirPath); {
+                                allSubs.forEach(sub => {
+                                    size += getSizeOnDiskRek(path.join(dirPath, sub));
+                                });
+                            }
+                        } else {
+                            size = itemStats.size;
+                        }
+
+                        return size;
+                    }
+                })
+            );
         });
 
         nodeModulesData.forEach(value => {
@@ -152,6 +194,8 @@ export class OutputGenerator {
         // customModulesData.forEach(value => {
         //     chartData[2].data.push([value.name, value.count]);
         // });
+
+        await Promise.all(promisesArray);
 
         // Render a set of data
         return compiledFunction({
@@ -167,7 +211,8 @@ export class OutputGenerator {
 
     static generateModules(dependencyName: string, importCountArray: ImportCount[], filesTree: Map<string, object>, date: Date): any {
         // Compile the source code
-        const compiledFunction = pug.compileFile('src/presentation/templates/html/module/module.pug');
+        // console.log("__dirname", __dirname);
+        const compiledFunction = pug.compileFile(path.join(__dirname, HTML_TEMPLATE_FILES.MODULE));
         const slashCount = (dependencyName.match(/\//g) || []).length;
         // Prepare Data
         const convertedData = transformDataRek(filesTree, "dependency-analysis/details");
@@ -207,7 +252,7 @@ export class OutputGenerator {
                     // foundAtLeastOneEntry = true;
 
                     dataObj[shortName].adds = {
-                        "link": path.join("../".repeat(slashCount + 2), combinedPath, shortName) + ".html",
+                        "link": path.join("../".repeat(slashCount + 2), combinedPath, shortName) + ".html?module=" + dependencyName,
                         "imports": usedImport.importDeclaration.isEntireModuleImported() ?
                             ["*"] : usedImport.importDeclaration.getImportSpecifiers()
                     }
@@ -217,8 +262,23 @@ export class OutputGenerator {
             // return foundAtLeastOneEntry ? dataObj : undefined;
             return dataObj;
         }
+    }
 
+    static generateFileContent(importCounts: ImportCount[], shortFileName: string, date: Date) {
+        const formattedContent = importCounts[0].sourceFile.text
+            .replace(/</gi, "&lt;")
+            .replace(/>/gi, "&gt;");
+        const lineCount = (formattedContent.match(/\n/g) || []).length;
+        const compiledFunction = pug.compileFile(path.join(__dirname, HTML_TEMPLATE_FILES.CODE));
+        const slashCount = (shortFileName.match(/\\/g) || []).length;
 
+        return compiledFunction({
+            title: 'File: ' + shortFileName,
+            folder: '../'.repeat(slashCount),
+            sourceCode: formattedContent,
+            lineCount: lineCount,
+            date: date
+        });
     }
 
 }

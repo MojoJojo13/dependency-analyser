@@ -1,0 +1,33 @@
+extends base.pug
+
+block scripts
+    script(src='run_prettify.js')
+    script.
+        window.onload = function () {
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+            const module = urlParams.get('module');
+            const href = document.getElementById("moduleLink").href + "modules/" + module + ".html";
+            document.getElementById("moduleLink").innerHTML = module;
+            document.getElementById("moduleLink").href = href;
+        }
+block content
+    ul.uk-breadcrumb
+        li
+            a(href=folder + 'index.html') Overview
+        li
+            a#moduleLink(href=folder)
+        li
+            span api.ts
+    pre
+        table.coverage
+            - var i = 1;
+            tr
+                td.line-count
+                    while i <= lineCount
+                        a(name='L' + i)
+                        a(href='#L' + i)=i++
+                td.line-coverage
+                    span.cline-any.cline-yes 1x
+                td
+                    pre.prettyprint.lang-js=sourceCode
