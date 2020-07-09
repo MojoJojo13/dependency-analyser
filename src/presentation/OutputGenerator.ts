@@ -28,7 +28,7 @@ export class OutputGenerator {
         const dependencyFileNameMap = countService.groupByFileName();
         const dependencyNameMap = countService.groupByDependencyName();
 
-        this.cleanRootFolder(rootPath);
+        // this.cleanRootFolder(rootPath);
         this.createComplements(rootPath);
 
         // INDEX

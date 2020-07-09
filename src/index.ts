@@ -3,8 +3,19 @@
 import {ExportScanner, findExportDeclarations} from "./exportService";
 import {ImportScanner} from "./importService";
 
+console.log("__dirname", __dirname);
 console.log('process.argv', process.argv);
 console.log('process.argv', process.argv.slice(2));
+
+/*
+    root: "" // project root, where the package.json is;
+    target: "" // root + "dependency-analysis";
+    scan: "" // directory to scan;
+
+    nodeNodules: "" // root + "node_modules";
+
+    ** exclude: "" // folders & files to exclude from root directory;
+ */
 
 
 import * as fs from "fs";
@@ -12,6 +23,86 @@ import * as path from "path";
 import * as ts from "typescript";
 import {FileHandler} from "./fileHandler";
 import {DependencyAnalyser} from "./DependencyAnalyser";
+const yargs = require("yargs");
+
+const NODE_MODULES = "node_modules";
+
+let options = { rootDir: "", targetDir: "", scanDir: "" };
+
+const argv: {root?, tar?, scan?} = yargs
+    .usage("Usage: dependency-analyser [options]")
+    .example("dependency-analyser --root C:/User/Project/your_project", "")
+    .example("dependency-analyser --root C:/User/Project/your_project --scan C:/User/Project/your_project/src", "")
+    .option('root', {
+        alias: 'r',
+        type: 'string',
+        description: 'Root directory of your project.'
+    }).option('scan', {
+        alias: 's',
+        type: 'string',
+        description: 'Directory to scan.'
+    }).option('tar', {
+        alias: 't',
+        type: 'string',
+        description: 'Target directory to put generated files into.'
+    })
+    .alias('h', 'help')
+    .showHelpOnFail(true)
+    .help()
+    .argv
+
+console.log("argv", argv);
+
+// determine the root directory
+if (argv.root) {
+    options.rootDir = argv.root;
+} else {
+    const split = process.argv[1].split(NODE_MODULES);
+
+    if (split.length < 2) {
+        console.error("Could not find the root folder. Please provide the root path in the arguments.");
+        process.exit(1);
+    }
+
+    options.rootDir = path.normalize(split[0]);
+}
+
+// check if the determined directory exists
+if (!fs.existsSync(options.rootDir)) {
+    console.error("The provided root directory does not exist.", options.rootDir);
+    process.exit(1);
+}
+
+// determine scan directory or file
+if (argv.scan) {
+    if (path.isAbsolute(argv.scan)) {
+        options.scanDir = argv.scan;
+    } else {
+        options.scanDir = path.join(options.rootDir, argv.scan);
+    }
+} else {
+    options.scanDir = options.rootDir;
+}
+
+// check if the determined directory exists
+if (!fs.existsSync(options.scanDir)) {
+    console.error("The provided directory to scan does not exist.", options.scanDir);
+    process.exit(1);
+}
+
+// determine target directory
+if (argv.tar) {
+    options.targetDir = argv.tar;
+} else {
+    options.targetDir = path.join(options.rootDir, "dependency-analysis");
+}
+
+// check if the target directory is valid
+// TODO: check for directory
+
+console.log("options", options);
+
+// process.exit();
 
 let outputPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\dependency-analysis";
 let sPath = "C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server\\src";
@@ -32,88 +123,3 @@ dependencyAnalyser.scanAllFiles();
 // console.log(dependencyAnalyser.countService.groupByFileName());
 // console.log(dependencyAnalyser.countService.groupByDependencyName());
 dependencyAnalyser.countService.generateOutput(sPath, outputPath);
-
-// const rootNode = ts.createSourceFile(
-//     'simpleImport.ts', // fileName
-//     fs.readFileSync(sPath, 'utf8'), // sourceText
-//     ts.ScriptTarget.Latest, // languageVersion
-//     false
-// );
-
-// let dependencyAnalyser = new DependencyAnalyser(sPath);
-// dependencyAnalyser.initDtsCreator();
-// dependencyAnalyser.scanAllFiles();
-
-// let pathToModule1 = require.resolve("typescript");
-// console.log("pathToModule1", pathToModule1);
-//
-// let pathToModule2 = require.resolve("fs");
-// console.log("pathToModule2", pathToModule2);
-//
-// let pathToModule3 = require.resolve("./Declarations");
-// console.log("pathToModule3", pathToModule3);
-
-// new FileHandler(sPath);
-
-// printChildren(rootNode);
-// console.log("----------------------------------------------------------------------------------------------------");
-// let exportScanner = new ExportScanner();
-// exportScanner.scanFile(rootNode);
-// console.log("----------------------------------------------------------------------------------------------------");
-//
-// let sPathImports = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\tests\\cases\\imports.ts"
-// console.log("sPath", sPath);
-//
-// const rootNodeImports = ts.createSourceFile(
-//     'imports.ts',   // fileName
-//     fs.readFileSync(sPathImports, 'utf8'), // sourceText
-//     ts.ScriptTarget.Latest, // languageVersion
-//     false
-// );
-// printChildren(rootNodeImports);
-// console.log("----------------------------------------------------------------------------------------------------");
-// let importScanner = new ImportScanner(rootNode);
-
-// Run the compiler
-// let sPath0 = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\tests\\cases\\exports.ts";
-// compile([sPath0], {
-//     allowJs: true,
-//     declaration: true,
-//     emitDeclarationOnly: true,
-// });
-
-// function compile(fileNames: string[], options: ts.CompilerOptions): void {
-//     // Create a Program with an in-memory emit
-//     // const createdFiles = {}
-//     // const host = ts.createCompilerHost(options);
-//     // host.writeFile = (fileName: string, content: string) => {
-//     //     console.log("fileName", fileName);
-//     //     console.log("content", content);
-//     //
-//     //     const dts = ts.createSourceFile(
-//     //         fileName,   // fileName
-//     //         content,
-//     //         ts.ScriptTarget.Latest, // languageVersion
-//     //         false
-//     //     );
-//     //
-//     //     printChildren(dts);
-//     //     let exportScanner = new ExportScanner();
-//     //     exportScanner.scanFile(dts);
-//     // }
-//     // createdFiles[fileName.replace(".js", ".d.ts")] = content
-//
-//     // Prepare and emit the d.ts files
-//     // const program = ts.createProgram(fileNames, options, host);
-//     // program.emit();
-//
-//     // // Loop through all the input files
-//     // fileNames.forEach(file => {
-//     //     console.log("### JavaScript\n")
-//     //     console.log(host.readFile(file))
-//     //
-//     //     console.log("### Type Definition\n")
-//     //     const dts = file.replace(".js", ".d.ts")
-//     //     console.log(createdFiles[dts])
-//     // })
-// }

@@ -18,12 +18,14 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^13.13.4",
+    "@types/yargs": "^15.0.5",
     "package-size": "^2.3.0",
     "pug": "^3.0.0",
     "tsify": "^4.0.1",
     "tslint": "^6.1.2",
     "typescript": "^3.9.2",
-    "uniq": "^1.0.1"
+    "uniq": "^1.0.1",
+    "yargs": "^15.4.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.11",
