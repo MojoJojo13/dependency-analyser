@@ -74,8 +74,8 @@ export class DependencyAnalyser {
     }
 
     private _path: string;
-    private _isDirectory: boolean;
-    private _isFile: boolean;
+    // private _isDirectory: boolean;
+    // private _isFile: boolean;
     private _dtsCreator: DtsCreator;
     private _allFiles: string[];
     // filesTree: Map<string, object>;
@@ -112,7 +112,7 @@ export class DependencyAnalyser {
             } else if (lstatSync.isFile()) {
 
                 // handle only Typescript Files
-                if (path.extname(scanDir) === "ts") {
+                if (path.extname(scanDir) === ".ts") {
                     // this.isFile = true;
                     this.allFiles = [scanDir];
                 }
@@ -123,32 +123,6 @@ export class DependencyAnalyser {
         } else {
             throw "not a valid srcPath: " + scanDir;
         }
-    }
-
-    initDtsCreator() {
-        // console.log("this.allFiles", this.allFiles);
-        this.dtsCreator = new DtsCreator(this.allFiles);
-        // this.dtsCreator.createExportService();
-        this.dtsCreator.createSourceFiles();
-    }
-
-    scanAllFiles() {
-        this.importScannerMap = new Map<string, ImportScanner>();
-
-        this.allFiles.forEach(fileName => {
-            const sourceFile = ts.createSourceFile(
-                fileName, // fileName
-                fs.readFileSync(fileName, 'utf8'), // sourceText
-                ts.ScriptTarget.Latest, // languageVersion
-            );
-
-            let importScanner = new ImportScanner(this, fileName, sourceFile);
-            this.importScannerMap.set(fileName, importScanner);
-        })
-    }
-
-    generateOutput() {
-        this.countService.outputGenerator.generateHTML();
     }
 
     getAllFiles(rootDirectory: string) {
@@ -184,19 +158,36 @@ export class DependencyAnalyser {
 
             return filesObj;
         }
+    }
 
-        // function isToExclude(directory: string): boolean {
-        //     return options.exclude.some(value => {
-        //         // let regEx = new RegExp(path.normalize(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-        //         // let regEx = new RegExp(value, 'g');
-        //         // console.log("value", value);
-        //         // console.log("directory", directory);
-        //         return directory.match(value);
-        //     }) || !options.fileExtensionFilter.some(value => {
-        //         let extension = path.parse(directory).ext;
-        //         return extension === value || !extension
-        //     })
-        // }
+    initDtsCreator() {
+        // console.log("this.allFiles", this.allFiles);
+        this.dtsCreator = new DtsCreator(this.allFiles);
+        // this.dtsCreator.createExportService();
+        this.dtsCreator.createSourceFiles();
+    }
+
+    scanAllFiles() {
+        this.importScannerMap = new Map<string, ImportScanner>();
+
+        if (this.allFiles.length === 0) {
+            throw Error("No files to scan found!");
+        }
+
+        this.allFiles.forEach(fileName => {
+            const sourceFile = ts.createSourceFile(
+                fileName, // fileName
+                fs.readFileSync(fileName, 'utf8'), // sourceText
+                ts.ScriptTarget.Latest, // languageVersion
+            );
+
+            let importScanner = new ImportScanner(this, fileName, sourceFile);
+            this.importScannerMap.set(fileName, importScanner);
+        })
+    }
+
+    generateOutput() {
+        this.countService.outputGenerator.generateHTML();
     }
 
     // getAllFilesFlat(directory: string): string[] { //TODO: should be async maybe
@@ -288,41 +279,41 @@ export class DependencyAnalyser {
         return sourceFile;
     }
 
-    /**
-     * @deprecated
-     */
-    getModuleExportScanner(moduleName: string): ExportScanner {
-        let exportScanner = this.moduleExportScannerMap.get(moduleName);
-
-        if (!exportScanner) {
-
-            let pathToModule = require.resolve(moduleName);
-            let dtsPath = pathToModule.replace(".js$", ".d.ts");
-
-            // console.log("pathToModule", pathToModule);
-            if (fs.existsSync(dtsPath)) {
-
-                const sourceFile = ts.createSourceFile(
-                    dtsPath, // fileName
-                    fs.readFileSync(dtsPath, 'utf8'), // sourceText
-                    ts.ScriptTarget.Latest, // languageVersion
-                );
-
-                exportScanner = new ExportScanner();
-                exportScanner.scanFile(sourceFile);
-
-                this.moduleExportScannerMap.set(moduleName, exportScanner);
-            } else {
-                console.error("moduleName", moduleName);
-                console.error("pathToModule", pathToModule);
-                //TODO: handle standard modules
-                return;
-                // throw Error("can't find .d.ts file");
-            }
-        }
-
-        return exportScanner;
-    }
+    // /**
+    //  * @deprecated
+    //  */
+    // getModuleExportScanner(moduleName: string): ExportScanner {
+    //     let exportScanner = this.moduleExportScannerMap.get(moduleName);
+    //
+    //     if (!exportScanner) {
+    //
+    //         let pathToModule = require.resolve(moduleName);
+    //         let dtsPath = pathToModule.replace(".js$", ".d.ts");
+    //
+    //         // console.log("pathToModule", pathToModule);
+    //         if (fs.existsSync(dtsPath)) {
+    //
+    //             const sourceFile = ts.createSourceFile(
+    //                 dtsPath, // fileName
+    //                 fs.readFileSync(dtsPath, 'utf8'), // sourceText
+    //                 ts.ScriptTarget.Latest, // languageVersion
+    //             );
+    //
+    //             exportScanner = new ExportScanner();
+    //             exportScanner.scanFile(sourceFile);
+    //
+    //             this.moduleExportScannerMap.set(moduleName, exportScanner);
+    //         } else {
+    //             console.error("moduleName", moduleName);
+    //             console.error("pathToModule", pathToModule);
+    //             //TODO: handle standard modules
+    //             return;
+    //             // throw Error("can't find .d.ts file");
+    //         }
+    //     }
+    //
+    //     return exportScanner;
+    // }
 
     get path(): string {
         return this._path;

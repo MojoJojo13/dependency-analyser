@@ -22,11 +22,11 @@ export class ImportScanner {
         // printChildren(source);
         // console.log("-------------------");
         this.scanSource(source, source);
-        console.log("-------------------");
+        // console.log("-------------------");
     }
 
     scanSource(node: ts.Node, sourceFile: ts.SourceFile) {
-        const that = this;
+        // const that = this;
 
         node.forEachChild(child => {
             switch (child.kind) {
@@ -38,25 +38,27 @@ export class ImportScanner {
                     const importSpecifier = importDeclaration.getModuleSpecifier();
 
                     // is it a local module, which starts with '../' or './' ?
-                    if (RegExp('^(\\.\\.\\/)|^(\\.\\/)').test(importSpecifier)) {
+                    if (RegExp('^(\\.\\.|\\.)(\\/)').test(importSpecifier)) {
                         const dtsFileName = path.join(path.dirname(this.fileName), importSpecifier) + ".d.ts";
                         const sourceFile = this.dependencyAnalyser.dtsCreator.exportSourceFileMap.get(dtsFileName);
 
                         // console.assert(sourceFile, "SourceFile not found or not existing");
                         if (sourceFile) {
                             importDeclaration.sourceFile = sourceFile;
+                        } else {
+                            console.error("No source File found!");
                         }
 
                         // NEEDS TO BE HANDLED SEPARATELY
                         // let importCount = new ImportCount(this.fileName, importDeclaration, undefined, false, true);
                         // this.dependencyAnalyser.countService.addImportCount(importCount);
                     } else {
-                        const options = { paths: [this.dependencyAnalyser.options.rootDir] };
+                        const options = {paths: [this.dependencyAnalyser.options.nodeModulesDir]};
                         const modulePath = require.resolve(importDeclaration.getModuleSpecifier(), options)
                         const isNodeModule = !path.isAbsolute(modulePath);
 
-                        // let sourceFile = this.dependencyAnalyser.getModuleSourceFile(importSpecifier);
-                        // importDeclaration.sourceFile = sourceFile;
+                        // let sourceFile1 = this.dependencyAnalyser.getModuleSourceFile(importSpecifier);
+                        // importDeclaration.sourceFile = sourceFile1; // FixMe: trouble with resolving
 
                         let importCount = new ImportCount(this.fileName, importDeclaration, sourceFile, isNodeModule, false);
                         this.dependencyAnalyser.countService.addImportCount(importCount);
@@ -95,12 +97,16 @@ export class ImportScanner {
                 //     console.error(`Not supported: ${ts.SyntaxKind[child.kind]} (${child.kind})`);
                 //     break;
                 //
-                // case ts.SyntaxKind.EndOfFileToken: // Ignore
-                //     break;
+                case ts.SyntaxKind.EndOfFileToken: // Ignore
+                    break;
 
                 default:
                     // console.log(`Can't handle this: ${ts.SyntaxKind[child.kind]} (${child.kind})`);
-                    that.scanSource(child, sourceFile);
+                    this.scanSource(child, sourceFile);
+                    if (ts.isIdentifier(child)) {
+                        console.log("child", child);
+                    }
+
                     break;
             }
         })

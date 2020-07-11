@@ -5,7 +5,7 @@ import {ImportScanner} from "./importService";
 
 console.log("__dirname", __dirname);
 console.log('process.argv', process.argv);
-console.log('process.argv', process.argv.slice(2));
+// console.log('process.argv', process.argv.slice(2));
 
 /*
     root: "" // project root, where the package.json is;
@@ -67,8 +67,6 @@ const argv: { root?, tar?, scan? } = yargs
     .showHelpOnFail(true)
     .help()
     .argv
-
-console.log("argv", argv);
 
 // determine the root directory
 if (argv.root) {

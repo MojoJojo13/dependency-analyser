@@ -230,7 +230,7 @@ export class OutputGenerator {
         // Prepare Data
         // const convertedData = transformDataRek(filesObject, "dependency-analysis/details");
         // console.log("filesObject", );
-        const convertedData = fillUpData(filesObject, "dependency-analysis/details");
+        const convertedData = fillUpData(filesObject, "details");
 
 
         // Render a set of data
@@ -258,7 +258,7 @@ export class OutputGenerator {
                 if (usedImport) {
 
                     dataObj[shortName].adds = {
-                        "link": path.join("../".repeat(slashCount + 2), combinedPath, shortName) + ".html?module=" + dependencyName,
+                        "link": path.join("../".repeat(slashCount + 1), combinedPath, shortName) + ".html?module=" + dependencyName,
                         "imports": usedImport.importDeclaration.isEntireModuleImported() ?
                             ["*"] : usedImport.importDeclaration.getImportSpecifiers()
                     }
