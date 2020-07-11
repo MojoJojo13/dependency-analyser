@@ -4,10 +4,10 @@ block scripts
     script(src=folder + 'run_prettify.js')
     script.
         window.onload = function () {
-            const queryString = window.location.search;
-            const urlParams = new URLSearchParams(queryString);
-            const module = urlParams.get('module');
-            const href = document.getElementById("moduleLink").href + "modules/" + module + ".html";
+            var queryString = window.location.search;
+            var urlParams = new URLSearchParams(queryString);
+            var module = urlParams.get('module');
+            var href = document.getElementById("moduleLink").href + "modules/" + module + ".html";
             document.getElementById("moduleLink").innerHTML = module;
             document.getElementById("moduleLink").href = href;
         }

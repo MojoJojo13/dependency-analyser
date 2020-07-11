@@ -51,7 +51,7 @@ export class ImportScanner {
                         // let importCount = new ImportCount(this.fileName, importDeclaration, undefined, false, true);
                         // this.dependencyAnalyser.countService.addImportCount(importCount);
                     } else {
-                        const options = { paths: ["C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server"] }; // FixMe: make it dynamic
+                        const options = { paths: [this.dependencyAnalyser.options.rootDir] };
                         const modulePath = require.resolve(importDeclaration.getModuleSpecifier(), options)
                         const isNodeModule = !path.isAbsolute(modulePath);
 

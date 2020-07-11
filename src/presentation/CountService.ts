@@ -1,8 +1,10 @@
 import {ImportCount} from "./Counter";
 import {OutputGenerator} from "./OutputGenerator";
 import {DependencyAnalyser} from "../DependencyAnalyser";
+import {Options} from "../index";
 
 export class CountService {
+
     get importCounts(): ImportCount[] {
         return this._importCounts;
     }
@@ -12,11 +14,14 @@ export class CountService {
     }
 
     private _importCounts: ImportCount[];
+
     dependencyAnalyser: DependencyAnalyser;
+    outputGenerator: OutputGenerator;
 
     constructor(dependencyAnalyser: DependencyAnalyser) {
         this._importCounts = [];
         this.dependencyAnalyser = dependencyAnalyser;
+        this.outputGenerator = new OutputGenerator(this);
     }
 
     addImportCount(importCount) {
@@ -46,9 +51,5 @@ export class CountService {
         });
 
         return importCountsMap;
-    }
-
-    generateOutput(path: string, outputPath: string) {
-        OutputGenerator.generateHTML(this, path, outputPath, this.dependencyAnalyser.filesTree);
     }
 }

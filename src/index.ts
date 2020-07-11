@@ -23,13 +23,30 @@ import * as path from "path";
 import * as ts from "typescript";
 import {FileHandler} from "./fileHandler";
 import {DependencyAnalyser} from "./DependencyAnalyser";
+
 const yargs = require("yargs");
+
+export interface Options {
+    rootDir: string,
+    targetDir: string,
+    scanDir: string,
+    nodeModulesDir: string,
+    exclude: string[],
+    fileExtensionFilter: string[]
+}
 
 const NODE_MODULES = "node_modules";
 
-let options = { rootDir: "", targetDir: "", scanDir: "" };
+const options: Options = {
+    rootDir: "",
+    scanDir: "",
+    targetDir: "",
+    nodeModulesDir: "",
+    exclude: ["\\\\node_modules$", "\\\..*"],
+    fileExtensionFilter: [".ts"]
+};
 
-const argv: {root?, tar?, scan?} = yargs
+const argv: { root?, tar?, scan? } = yargs
     .usage("Usage: dependency-analyser [options]")
     .example("dependency-analyser --root C:/User/Project/your_project", "")
     .example("dependency-analyser --root C:/User/Project/your_project --scan C:/User/Project/your_project/src", "")
@@ -66,6 +83,9 @@ if (argv.root) {
 
     options.rootDir = path.normalize(split[0]);
 }
+
+// set node_modules directory
+options.nodeModulesDir = path.join(options.rootDir, NODE_MODULES);
 
 // check if the determined directory exists
 if (!fs.existsSync(options.rootDir)) {
@@ -104,22 +124,15 @@ console.log("options", options);
 
 // process.exit();
 
-let outputPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\dependency-analysis";
-let sPath = "C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server\\src";
-// let sPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\tests\\cases\\imports.ts";
-// let sPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\dist\\exports.d.ts";
-// let sPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\dist\\exportService.d.ts";
-// let sPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\node_modules\\typescript\\lib\\typescript.d.ts";
-// let sPath = "C:\\Users\\Paul\\WebstormProjects\\local-consumer\\src\\simpleImport.ts";
-// let sPath = path.join(path.dirname(process.argv[1]), "../../../", process.argv[2]);
-console.log("sPath", sPath);
+// let outputPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\dependency-analysis";
+// let sPath = "C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server\\src";
+// console.log("sPath", sPath);
 
-let dependencyAnalyser = new DependencyAnalyser(sPath);
-console.log("allFiles", dependencyAnalyser.allFiles);
+const dependencyAnalyser = new DependencyAnalyser(options);
 dependencyAnalyser.initDtsCreator();
 // console.log("Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys())", Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys()));
 dependencyAnalyser.scanAllFiles();
 // console.log(dependencyAnalyser.countService.importCounts);
 // console.log(dependencyAnalyser.countService.groupByFileName());
 // console.log(dependencyAnalyser.countService.groupByDependencyName());
-dependencyAnalyser.countService.generateOutput(sPath, outputPath);
+dependencyAnalyser.generateOutput();

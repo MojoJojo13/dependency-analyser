@@ -43,10 +43,23 @@ block content
                             th NPM Repo
                             th.uk-text-right Size on Disk
                             th.uk-text-right Size
+                                |
+                                |
+                                a(href="https://www.npmjs.com/package/package-size", target='_blank')
+                                    span(uk-icon="icon: warning; ratio: 0.8", uk-tooltip="Calculated with 'package-size'. Click for more info.")
+                                // or info
                             //th Size [kB]
                             th.uk-text-right Minified
+                                |
+                                |
+                                a(href="https://www.npmjs.com/package/package-size", target='_blank')
+                                    span(uk-icon="icon: warning; ratio: 0.8", uk-tooltip="Calculated with 'package-size'. Click for more info.")
                             //th Minified [kB]
                             th.uk-text-right Gzipped
+                                |
+                                |
+                                a(href="https://www.npmjs.com/package/package-size", target='_blank')
+                                    span(uk-icon="icon: warning; ratio: 0.8", uk-tooltip="Calculated with 'package-size'. Click for more info.")
                             //th Gzipped [kB]
                             th.uk-text-center Module Imports
                     each val in dependencies
