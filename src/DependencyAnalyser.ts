@@ -131,7 +131,7 @@ export class DependencyAnalyser {
 
         let filesObject = getAllFilesRek(rootDirectory);
 
-        return { "filesArray": filesArray, "filesObject": filesObject };
+        return {"filesArray": filesArray, "filesObject": filesObject};
 
         function getAllFilesRek(directory: string): object {
             const directoryItems = fs.readdirSync(directory);
@@ -145,7 +145,7 @@ export class DependencyAnalyser {
 
                 if (lstatSync.isDirectory()) {
                     const children = getAllFilesRek(fileName);
-                    filesObj[fileName] = children ? { children: children } : {};
+                    filesObj[fileName] = children ? {children: children} : {};
                 } else if (lstatSync.isFile()) {
                     if (options.fileExtensionFilter.some(value => path.parse(fileName).ext === value)) {
                         filesObj[fileName] = null;
@@ -251,10 +251,10 @@ export class DependencyAnalyser {
         let sourceFile: SourceFile = this.moduleSourceFileMap.get(moduleName);
 
         if (!sourceFile) {
-            let pathToModule = require.resolve(moduleName);
+            let pathToModule = require.resolve(moduleName, {paths: [this.options.nodeModulesDir]});
             let dtsPath = pathToModule.replace(/\.js$/g, ".d.ts");
 
-            // console.log("pathToModule", pathToModule);
+            console.log("pathToModule", pathToModule);
             if (fs.existsSync(dtsPath)) {
 
                 const sourceFileTs = ts.createSourceFile(

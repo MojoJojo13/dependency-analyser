@@ -10,6 +10,32 @@ block scripts
             var href = document.getElementById("moduleLink").href + "modules/" + module + ".html";
             document.getElementById("moduleLink").innerHTML = module;
             document.getElementById("moduleLink").href = href;
+
+            // count and mark imports
+            var importsArr = urlParams.get('imports').split(",");
+            var codeElement = document.getElementsByClassName("prettyprinted")[0];
+            var children = Array.from(codeElement.children);
+            var lineCounter = 1;
+            children.forEach(child => {
+                lineCounter += (child.innerText.match(/\n/g) || []).length;
+
+                importsArr.forEach(value => {
+                    if (child.innerText.trim() === value) {
+                        child.className += " mark";
+
+                        // move all whitespaces to the previous element, for a better looking mark
+                        var trimmedVal = child.innerHTML.trim();
+                        child.previousSibling.innerHTML += child.innerHTML.split(trimmedVal)[0];
+                        child.nextSibling.innerHTML = child.innerHTML.split(trimmedVal)[1] + child.nextSibling.innerHTML;
+                        child.innerHTML = trimmedVal;
+
+                        // add counter to the line number
+                        var cLine = document.getElementById("cline" + lineCounter);
+                        var preVal = cLine.innerHTML;
+                        cLine.innerHTML = preVal !== "-" ? (parseInt(preVal) + 1) + "x" : "1x";
+                    }
+                });
+            });
         }
 block content
     ul.uk-breadcrumb
@@ -21,13 +47,14 @@ block content
             span api.ts
     pre
         table.coverage
-            - var i = 1;
+            - var i = 1, j = 1;
             tr
                 td.line-count
                     while i <= lineCount
                         a(name='L' + i)
                         a(href='#L' + i)=i++
                 td.line-coverage
-                    span.cline-any.cline-yes 1x
+                    while j <= lineCount
+                        span(id="cline" + j++).cline-any.cline-yes -
                 td
                     pre.prettyprint.lang-js=sourceCode

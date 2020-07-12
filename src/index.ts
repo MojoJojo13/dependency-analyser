@@ -48,8 +48,8 @@ const options: Options = {
 
 const argv: { root?, tar?, scan? } = yargs
     .usage("Usage: dependency-analyser [options]")
-    .example("dependency-analyser --root C:/User/Project/your_project", "")
-    .example("dependency-analyser --root C:/User/Project/your_project --scan C:/User/Project/your_project/src", "")
+    .example("dependency-analyser --root C:/User/Projects/your_project", "")
+    .example("dependency-analyser --root C:/User/Projects/your_project --scan C:/User/Projects/your_project/src", "")
     .option('root', {
         alias: 'r',
         type: 'string',

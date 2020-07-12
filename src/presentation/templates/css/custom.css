@@ -66,14 +66,18 @@ ul, #myUL {
 
 /* Code Stuff */
 
+.mark {
+    background-color: #9afbff;
+}
+
 pre {
     font: 12px/1.4 Consolas, "Liberation Mono", Menlo, Courier, monospace;
     margin: 0;
-    padding: 0;
+    padding: 0 !important;
     -moz-tab-size: 2;
     -o-tab-size: 2;
     tab-size: 2;
-    border: none;
+    border: none !important;
 }
 
 table.coverage {
@@ -105,7 +109,8 @@ table.coverage td.line-coverage {
 }
 
 table.coverage td span.cline-any {
-    display: inline-block;
+    display: block;
     padding: 0 5px;
+    background-color: antiquewhite;
     /*width: 100%;*/
 }

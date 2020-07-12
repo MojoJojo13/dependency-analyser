@@ -258,7 +258,8 @@ export class OutputGenerator {
                 if (usedImport) {
 
                     dataObj[shortName].adds = {
-                        "link": path.join("../".repeat(slashCount + 1), combinedPath, shortName) + ".html?module=" + dependencyName,
+                        "link": path.join("../".repeat(slashCount + 1), combinedPath, shortName) + ".html?module="
+                            + dependencyName + "&imports=" + usedImport.importDeclaration.getImportSpecifiers().join(","),
                         "imports": usedImport.importDeclaration.isEntireModuleImported() ?
                             ["*"] : usedImport.importDeclaration.getImportSpecifiers()
                     }

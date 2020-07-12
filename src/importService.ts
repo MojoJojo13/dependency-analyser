@@ -19,8 +19,8 @@ export class ImportScanner {
         this.fileName = fileName;
         this.source = source;
 
-        // printChildren(source);
-        // console.log("-------------------");
+        printChildren(source);
+        console.log("-------------------");
         this.scanSource(source, source);
         // console.log("-------------------");
     }
@@ -54,7 +54,7 @@ export class ImportScanner {
                         // this.dependencyAnalyser.countService.addImportCount(importCount);
                     } else {
                         const options = {paths: [this.dependencyAnalyser.options.nodeModulesDir]};
-                        const modulePath = require.resolve(importDeclaration.getModuleSpecifier(), options)
+                        const modulePath = require.resolve(importDeclaration.getModuleSpecifier(), options);
                         const isNodeModule = !path.isAbsolute(modulePath);
 
                         // let sourceFile1 = this.dependencyAnalyser.getModuleSourceFile(importSpecifier);
@@ -102,10 +102,10 @@ export class ImportScanner {
 
                 default:
                     // console.log(`Can't handle this: ${ts.SyntaxKind[child.kind]} (${child.kind})`);
-                    this.scanSource(child, sourceFile);
-                    if (ts.isIdentifier(child)) {
-                        console.log("child", child);
-                    }
+                    // this.scanSource(child, sourceFile);
+                    // if (ts.isIdentifier(child)) {
+                    //     console.log("child", child);
+                    // }
 
                     break;
             }
