@@ -1,7 +1,7 @@
 import {CountService} from "./CountService";
 import * as fs from "fs";
 import * as path from "path";
-import {ImportCount} from "./Counter";
+import {ImportCount, UsageCount} from "./Counter";
 import * as pug from "pug";
 
 const getSizes = require('package-size');
@@ -60,8 +60,9 @@ export class OutputGenerator {
         dependencyFileNameMap.forEach((importCountArray, filePath) => {
             const relativePath = path.relative(scanDir, filePath);
             const fileName = path.join(targetDir, "details", relativePath) + ".html";
+            const usageCountArray = this.countService.groupUsageByFileName().get(filePath);
 
-            this.createHtmlFile(fileName, this.generateFileContent(importCountArray, relativePath));
+            this.createHtmlFile(fileName, this.generateFileContent(importCountArray, usageCountArray, relativePath));
         });
 
     }
@@ -305,19 +306,62 @@ export class OutputGenerator {
         // }
     }
 
-    private generateFileContent(importCounts: ImportCount[], shortFileName: string): any {
-        const formattedContent = importCounts[0].sourceFile.text
+    private generateFileContent(importCounts: ImportCount[], usageCountArray: UsageCount[], shortFileName: string): any {
+        const compiledFunction = pug.compileFile(path.join(__dirname, HTML_TEMPLATE_FILES.CODE));
+        let formattedContent = importCounts[0].sourceFile.text
         // .replace(/</gi, "&lt;")
         // .replace(/>/gi, "&gt;");
         const lineCount = (formattedContent.match(/\n/g) || []).length;
-        const compiledFunction = pug.compileFile(path.join(__dirname, HTML_TEMPLATE_FILES.CODE));
         const slashCount = (shortFileName.match(/\\/g) || []).length;
+        const usageArray = [];
+
+        // console.log("shortFileName", shortFileName);
+        
+        usageCountArray.forEach(value => {
+            const identifier = value.identifier;
+            const identifierName = identifier.escapedText.toString();
+
+            let code1 = formattedContent.substring(0, identifier.end);
+            const lineCountToOccurrence = (code1.match(/\n/g) || []).length;
+
+            usageArray.push({
+                "lineCount": lineCountToOccurrence + 1,
+                "identifierName": identifierName,
+                "dependencyName": value.dependencyName
+            });
+
+            // console.log("lineCountToOccurrence", lineCountToOccurrence);
+            // console.log("identifierName", identifierName);
+            // console.log("value.dependencyName", );
+            // console.log();
+
+            //----------------------
+            // formattedContent.replace(/(.{identifier.pos}).{identifier.end - identifier.pos}/,"TDTD")
+            // let code = formattedContent.substr(identifier.pos, identifier.end - identifier.pos)
+            //     .replace(identifierName, "&" + identifierName + "&");
+            // code.replace(identifier.escapedText.toString(), match => {
+            //     console.log("match", match);
+            //     return "ABCDEFG"
+            // });
+            //     console.log("code", code);
+            // var expression = "(.{" + identifier.pos + ").{" + (identifier.end - identifier.pos) + "}";
+            // formattedContent.replace(new RegExp(expression, "g"), function(match, p1, p2, p3, offset, string){
+            //
+            //     return match;
+            // })
+            // console.log(code.match(identifier.escapedText.toString()));
+            // formattedContent = formattedContent.substr(0, identifier.pos) + code + formattedContent.substr(identifier.end, formattedContent.length);
+            // console.log("code", code);
+
+        });
 
         return compiledFunction({
             title: 'File: ' + shortFileName,
+            shortFileName: shortFileName,
             folder: '../'.repeat(slashCount + 1),
             sourceCode: formattedContent,
             lineCount: lineCount,
+            usageArray: usageArray,
             date: this.date
         });
     }

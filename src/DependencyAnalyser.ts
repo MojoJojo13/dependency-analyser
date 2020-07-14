@@ -183,14 +183,14 @@ export class DependencyAnalyser {
 
             let importScanner = new ImportScanner(this, fileName, sourceFile);
             this.importScannerMap.set(fileName, importScanner);
-        })
+        });
     }
 
     generateOutput() {
         this.countService.outputGenerator.generateHTML();
     }
 
-    // getAllFilesFlat(directory: string): string[] { //TODO: should be async maybe
+    // getAllFilesFlat(directory: string): string[] {
     //     let filesArray: string[] = [];
     //     let options = this.options;
     //

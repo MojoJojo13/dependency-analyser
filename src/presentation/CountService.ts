@@ -1,4 +1,4 @@
-import {ImportCount} from "./Counter";
+import {ImportCount, UsageCount} from "./Counter";
 import {OutputGenerator} from "./OutputGenerator";
 import {DependencyAnalyser} from "../DependencyAnalyser";
 import {Options} from "../index";
@@ -14,12 +14,14 @@ export class CountService {
     }
 
     private _importCounts: ImportCount[];
+    usageCounts: UsageCount[];
 
     dependencyAnalyser: DependencyAnalyser;
     outputGenerator: OutputGenerator;
 
     constructor(dependencyAnalyser: DependencyAnalyser) {
         this._importCounts = [];
+        this.usageCounts = [];
         this.dependencyAnalyser = dependencyAnalyser;
         this.outputGenerator = new OutputGenerator(this);
     }
@@ -51,5 +53,26 @@ export class CountService {
         });
 
         return importCountsMap;
+    }
+
+    addUsageCount(usageCount: UsageCount) {
+        this.usageCounts.push(usageCount);
+    }
+
+    groupUsageByFileName(): Map<string, UsageCount[]> {
+        const usageCountMap = new Map<string, UsageCount[]>();
+
+        this.usageCounts.forEach(value => {
+            let usageCountArray: UsageCount[] = usageCountMap.get(value.fileName);
+
+            if (usageCountArray) {
+                usageCountArray.push(value);
+            } else {
+                usageCountArray = [value];
+                usageCountMap.set(value.fileName, usageCountArray);
+            }
+        })
+
+        return usageCountMap;
     }
 }

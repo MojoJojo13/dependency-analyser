@@ -78,20 +78,3 @@ export class FileHandler {
         this._sourceText = value;
     }
 }
-
-function printChildren(node, indent?: string) {
-    indent = indent || "";
-
-    node.forEachChild(child => {
-
-        if (child.escapedText) {
-            console.log(indent + "SyntaxKind:", child.kind + " " + ts.SyntaxKind[child.kind], "| EscapedText:", child.escapedText);
-        } else if (child.text) {
-            console.log(indent + "SyntaxKind:", child.kind + " " + ts.SyntaxKind[child.kind], "| Text:", child.text);
-        } else {
-            console.log(indent + "SyntaxKind:", child.kind + " " + ts.SyntaxKind[child.kind]);
-        }
-
-        printChildren(child, indent + "  ");
-    })
-}

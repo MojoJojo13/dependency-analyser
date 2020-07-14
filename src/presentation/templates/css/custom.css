@@ -67,7 +67,11 @@ ul, #myUL {
 /* Code Stuff */
 
 .mark {
-    background-color: #9afbff;
+    background-color: #5bff5e;
+}
+
+.decent {
+    background-color: #bef9fd;
 }
 
 pre {

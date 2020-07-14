@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import {ImportDeclaration} from "../Declarations";
+import {Declaration, ImportDeclaration} from "../Declarations";
 
 enum ImportKind {
     Test
@@ -32,5 +32,17 @@ export class ImportCount implements Count {
 }
 
 export class UsageCount implements Count {
+    fileName: string;
+    importDeclaration: Declaration;
+    identifier: ts.Identifier;
 
+    constructor(fileName: string, importDeclaration: Declaration, identifier: ts.Identifier) {
+        this.fileName = fileName;
+        this.importDeclaration = importDeclaration;
+        this.identifier = identifier;
+    }
+
+    get dependencyName(): string {
+        return (<ImportDeclaration>this.importDeclaration).getModuleSpecifier();
+    }
 }

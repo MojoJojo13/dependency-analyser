@@ -1,28 +1,13 @@
 #!/usr/bin/env node
-
-import {ExportScanner, findExportDeclarations} from "./exportService";
-import {ImportScanner} from "./importService";
-
-console.log("__dirname", __dirname);
-console.log('process.argv', process.argv);
-// console.log('process.argv', process.argv.slice(2));
-
-/*
-    root: "" // project root, where the package.json is;
-    target: "" // root + "dependency-analysis";
-    scan: "" // directory to scan;
-
-    nodeNodules: "" // root + "node_modules";
-
-    ** exclude: "" // folders & files to exclude from root directory;
- */
-
-
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 import {FileHandler} from "./fileHandler";
 import {DependencyAnalyser} from "./DependencyAnalyser";
+
+console.log("__dirname", __dirname);
+console.log('process.argv', process.argv);
+// console.log('process.argv', process.argv.slice(2));
 
 const yargs = require("yargs");
 

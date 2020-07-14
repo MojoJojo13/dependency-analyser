@@ -15,27 +15,56 @@ block scripts
             var importsArr = urlParams.get('imports').split(",");
             var codeElement = document.getElementsByClassName("prettyprinted")[0];
             var children = Array.from(codeElement.children);
-            var lineCounter = 1;
-            children.forEach(child => {
-                lineCounter += (child.innerText.match(/\n/g) || []).length;
+            // var lineCounter = 1;
+            // children.forEach(child => {
+            //     lineCounter += (child.innerText.match(/\n/g) || []).length;
+            //
+            //     importsArr.forEach(value => {
+            //         if (child.innerText.trim() === value) {
+            //             child.className += " mark";
+            //
+            //             // move all whitespaces to the previous element, for a better looking mark
+            //             var trimmedVal = child.innerHTML.trim();
+            //             child.previousSibling.innerHTML += child.innerHTML.split(trimmedVal)[0];
+            //             child.nextSibling.innerHTML = child.innerHTML.split(trimmedVal)[1] + child.nextSibling.innerHTML;
+            //             child.innerHTML = trimmedVal;
+            //
+            //             // add counter to the line number
+            //             var cLine = document.getElementById("cline" + lineCounter);
+            //             var preVal = cLine.innerHTML;
+            //             cLine.innerHTML = preVal !== "-" ? (parseInt(preVal) + 1) + "x" : "1x";
+            //         }
+            //     });
+            // });
 
-                importsArr.forEach(value => {
-                    if (child.innerText.trim() === value) {
-                        child.className += " mark";
+            var usageArray = !{JSON.stringify(usageArray)};
+            usageArray.forEach(value => {
+                var lineCounter = 1;
+
+                children.forEach(child => {
+                    lineCounter += (child.innerText.match(/\n/g) || []).length;
+
+                    if (lineCounter === value.lineCount && child.innerText.trim() === value.identifierName) {
+                        if (importsArr.some(value1 => value1 === value.identifierName)) {
+                            child.className += " mark";
+
+                            // add counter to the line number
+                            var cLine = document.getElementById("cline" + lineCounter);
+                            var preVal = cLine.innerHTML;
+                            cLine.innerHTML = preVal !== "-" ? (parseInt(preVal) + 1) + "x" : "1x";
+                        } else {
+                            child.className += " mark decent";
+                        }
 
                         // move all whitespaces to the previous element, for a better looking mark
                         var trimmedVal = child.innerHTML.trim();
+                        var hrefLink = "?module=" + value.dependencyName + "&imports=" + value.identifierName;
                         child.previousSibling.innerHTML += child.innerHTML.split(trimmedVal)[0];
                         child.nextSibling.innerHTML = child.innerHTML.split(trimmedVal)[1] + child.nextSibling.innerHTML;
-                        child.innerHTML = trimmedVal;
-
-                        // add counter to the line number
-                        var cLine = document.getElementById("cline" + lineCounter);
-                        var preVal = cLine.innerHTML;
-                        cLine.innerHTML = preVal !== "-" ? (parseInt(preVal) + 1) + "x" : "1x";
+                        child.innerHTML = "<a href='" + hrefLink + "'>" + trimmedVal + "</a>";
                     }
-                });
-            });
+                })
+            })
         }
 block content
     ul.uk-breadcrumb
@@ -44,7 +73,7 @@ block content
         li
             a#moduleLink(href=folder)
         li
-            span api.ts
+            span=shortFileName
     pre
         table.coverage
             - var i = 1, j = 1;

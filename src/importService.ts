@@ -3,7 +3,7 @@ import * as path from "path";
 import {Declaration, ImportDeclaration} from "./Declarations";
 import {DependencyAnalyser} from "./DependencyAnalyser";
 import {printChildren} from "./util";
-import {ImportCount} from "./presentation/Counter";
+import {ImportCount, UsageCount} from "./presentation/Counter";
 
 export class ImportScanner {
 
@@ -19,13 +19,14 @@ export class ImportScanner {
         this.fileName = fileName;
         this.source = source;
 
-        printChildren(source);
+        // printChildren(source);
         console.log("-------------------");
-        this.scanSource(source, source);
+        console.log("fileName", fileName);
+        this.scanSource(source, null, source);
         // console.log("-------------------");
     }
 
-    scanSource(node: ts.Node, sourceFile: ts.SourceFile) {
+    scanSource(node: ts.Node, parentNode: ts.Node, sourceFile: ts.SourceFile) {
         // const that = this;
 
         node.forEachChild(child => {
@@ -102,10 +103,19 @@ export class ImportScanner {
 
                 default:
                     // console.log(`Can't handle this: ${ts.SyntaxKind[child.kind]} (${child.kind})`);
-                    // this.scanSource(child, sourceFile);
-                    // if (ts.isIdentifier(child)) {
-                    //     console.log("child", child);
-                    // }
+                    this.scanSource(child, node, sourceFile);
+                    if (ts.isIdentifier(child)) {
+                        let name = child.escapedText.toString();
+                        let importDeclaration = this.importMap.get(name);
+                        if (importDeclaration) {
+                            // console.log("child", child);
+                            // let code = sourceFile.text.substr(child.pos, child.end - child.pos);
+                            // console.log("code", code);
+
+                            const usageCount = new UsageCount(this.fileName, importDeclaration, child);
+                            this.dependencyAnalyser.countService.addUsageCount(usageCount);
+                        }
+                    }
 
                     break;
             }
