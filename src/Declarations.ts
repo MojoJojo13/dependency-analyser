@@ -90,17 +90,13 @@ export class Declaration {
 }
 
 export class ImportDeclaration extends Declaration {
-
     private _fileName: string;
     /**
      * @deprecated
      */
     private _exportScanner: ExportScanner;
     private _sourceFile: SourceFile;
-
-    toString(): string {
-        return `FileName: ${this.fileName}`;
-    }
+    private _isDependency: boolean;
 
     isEntireModuleImported(): boolean {
         return this.node.importClause
@@ -170,6 +166,14 @@ export class ImportDeclaration extends Declaration {
 
     set sourceFile(value: SourceFile) {
         this._sourceFile = value;
+    }
+
+    get isDependency(): boolean {
+        return this._isDependency;
+    }
+
+    set isDependency(value: boolean) {
+        this._isDependency = value;
     }
 }
 

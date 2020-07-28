@@ -12,30 +12,59 @@ block scripts
             document.getElementById("moduleLink").href = href;
 
             // count and mark imports
-            var importsArr = urlParams.get('imports').split(",");
+            var importsArr = urlParams.get("imports").split(",");
             var codeElement = document.getElementsByClassName("prettyprinted")[0];
             var children = Array.from(codeElement.children);
-            // var lineCounter = 1;
-            // children.forEach(child => {
-            //     lineCounter += (child.innerText.match(/\n/g) || []).length;
-            //
-            //     importsArr.forEach(value => {
-            //         if (child.innerText.trim() === value) {
-            //             child.className += " mark";
-            //
-            //             // move all whitespaces to the previous element, for a better looking mark
-            //             var trimmedVal = child.innerHTML.trim();
-            //             child.previousSibling.innerHTML += child.innerHTML.split(trimmedVal)[0];
-            //             child.nextSibling.innerHTML = child.innerHTML.split(trimmedVal)[1] + child.nextSibling.innerHTML;
-            //             child.innerHTML = trimmedVal;
-            //
-            //             // add counter to the line number
-            //             var cLine = document.getElementById("cline" + lineCounter);
-            //             var preVal = cLine.innerHTML;
-            //             cLine.innerHTML = preVal !== "-" ? (parseInt(preVal) + 1) + "x" : "1x";
-            //         }
-            //     });
-            // });
+            var importsArray = !{JSON.stringify(importsArray)};
+            importsArray.forEach(value => {
+                var lineCounter = 1;
+
+                children.forEach(child => {
+                    lineCounter += (child.innerText.match(/\n/g) || []).length;
+
+                    if (lineCounter <= value.lineCount) {
+                        if (child.innerText === '"' + value.moduleSpecifier + '"' ||
+                            child.innerText === "'" + value.moduleSpecifier + "'") {
+                            var hrefLink = "?module=" + module + "&imports=" + value.importSpecifiers.join(",");
+                            child.innerHTML = "<a href='" + hrefLink + "'>" + child.innerText + "</a>";
+                            child.classList.add("mark", "decent");
+                        } else if (!value.isEntireModuleImported) {
+                            value.importSpecifiers.forEach(value1 => {
+                                if (value1 === child.innerText.trim()) {
+                                    if (importsArr.some(value2 => value2 === value1)) {
+                                        child.classList.add('mark');
+
+                                        // add counter to the line number
+                                        // var cLine = document.getElementById("cline" + lineCounter);
+                                        // var preVal = cLine.innerHTML;
+                                        // cLine.innerHTML = preVal !== "&nbsp;" ? (parseInt(preVal) + 1) + "x" : "1x";
+                                        // cLine.classList.add('cline-yes')
+                                    } else {
+                                        child.classList.add('mark');
+                                        child.classList.add('decent');
+                                    }
+
+                                    var hrefLink = "?module=" + module + "&imports=" + value1;
+                                    trimElement(child, hrefLink);
+                                }
+                            });
+                        } else if (value.isEntireModuleImported) {
+                            var asRegExp = new RegExp("^as\\s+" + value.importSpecifiers[0]);
+                            if (child.innerText.trim().match(asRegExp) || child.innerText.trim() === value.importSpecifiers[0]) {
+
+                                if (importsArr.some(value2 => value2 === value.importSpecifiers[0])) {
+                                    child.classList.add("mark");
+                                } else {
+                                    child.classList.add("mark", "decent");
+                                }
+
+                                var hrefLink = "?module=" + module + "&imports=" + value.importSpecifiers[0];
+                                trimElement(child, hrefLink);
+                            }
+                        }
+                    }
+                });
+            });
 
             var usageArray = !{JSON.stringify(usageArray)};
             usageArray.forEach(value => {
@@ -45,26 +74,69 @@ block scripts
                     lineCounter += (child.innerText.match(/\n/g) || []).length;
 
                     if (lineCounter === value.lineCount && child.innerText.trim() === value.identifierName) {
-                        if (importsArr.some(value1 => value1 === value.identifierName)) {
-                            child.className += " mark";
+                        if (!child.classList.contains('mark')) {
+                            if (importsArr.some(value1 => value1 === value.identifierName)) {
+                                child.classList.add('mark');
 
-                            // add counter to the line number
-                            var cLine = document.getElementById("cline" + lineCounter);
-                            var preVal = cLine.innerHTML;
-                            cLine.innerHTML = preVal !== "-" ? (parseInt(preVal) + 1) + "x" : "1x";
-                        } else {
-                            child.className += " mark decent";
+                                // add counter to the line number
+                                var cLine = document.getElementById("cline" + lineCounter);
+                                var preVal = cLine.innerHTML;
+                                cLine.innerHTML = preVal !== "&nbsp;" ? (parseInt(preVal) + 1) + "x" : "1x";
+                                cLine.classList.add('cline-yes')
+                            } else {
+                                child.classList.add('mark');
+                                child.classList.add('decent');
+                            }
                         }
 
-                        // move all whitespaces to the previous element, for a better looking mark
-                        var trimmedVal = child.innerHTML.trim();
-                        var hrefLink = "?module=" + value.dependencyName + "&imports=" + value.identifierName;
-                        child.previousSibling.innerHTML += child.innerHTML.split(trimmedVal)[0];
-                        child.nextSibling.innerHTML = child.innerHTML.split(trimmedVal)[1] + child.nextSibling.innerHTML;
-                        child.innerHTML = "<a href='" + hrefLink + "'>" + trimmedVal + "</a>";
+                        var hrefLink = "?module=" + module + "&imports=" + value.identifierName;
+                        trimElement(child, hrefLink);
                     }
-                })
-            })
+                });
+            });
+
+            var countArray = !{JSON.stringify(countArray)};
+            if (countArray) {
+                google.charts.load("current", {packages: ["corechart"]});
+                google.charts.setOnLoadCallback(drawChart);
+
+                function drawChart() {
+                    var data = google.visualization.arrayToDataTable(countArray);
+                    var view = new google.visualization.DataView(data);
+                    var chart = new google.visualization.BarChart(document.getElementById("barchart_values"));
+                    var options = {
+                        title: "Import Distribution",
+                        // width: 600,
+                        height: 100,
+                        bar: {groupWidth: "40%"},
+                        hAxis: {format: '0'},
+                        legend: {position: 'top', maxLines: 3},
+                        isStacked: true,
+                        series: (() => {
+                            var series = {};
+                            for (var i = 1, j = 0; i < countArray[0].length; i = i + 2, j++) {
+                                series[j] = {color: 'grey'};
+                                if (importsArr.some(imp => imp === countArray[0][i])) {
+                                    series[j] = {color: '#1e87f0'};
+                                }
+                            }
+                            return series;
+                        })()
+                    };
+                    chart.draw(view, options);
+                }
+            }
+
+            /**
+             * Moves all whitespaces to the previous and next element, for a better looking mark.
+             * Puts the element into a Link "<a href="hrefLink">child</a>"
+             */
+            function trimElement(child, hrefLink) {
+                var trimmedVal = child.innerHTML.trim();
+                child.previousSibling.innerHTML += child.innerHTML.split(trimmedVal)[0];
+                child.nextSibling.innerHTML = child.innerHTML.split(trimmedVal)[1] + child.nextSibling.innerHTML;
+                child.innerHTML = "<a href='" + hrefLink + "'>" + trimmedVal + "</a>";
+            }
         }
 block content
     ul.uk-breadcrumb
@@ -74,6 +146,8 @@ block content
             a#moduleLink(href=folder)
         li
             span=shortFileName
+    a(href='#' uk-totop uk-scroll)#sticky-to-top
+    div#barchart_values
     pre
         table.coverage
             - var i = 1, j = 1;
@@ -84,6 +158,6 @@ block content
                         a(href='#L' + i)=i++
                 td.line-coverage
                     while j <= lineCount
-                        span(id="cline" + j++).cline-any.cline-yes -
+                        span(id="cline" + j++).cline-any &nbsp;
                 td
                     pre.prettyprint.lang-js=sourceCode

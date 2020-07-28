@@ -1,7 +1,5 @@
 import {MyClass} from "./exports"
 
-let myClass: MyClass = new MyClass();
-
 MyClass.myStaticMethod();
 
 {

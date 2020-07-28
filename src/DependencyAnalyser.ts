@@ -85,6 +85,7 @@ export class DependencyAnalyser {
     private _moduleSourceFileMap: Map<string, SourceFile>;
     private _countService: CountService;
     options: Options;
+    packageJson: object;
 
     constructor(options: Options) {
         this.options = options;
@@ -93,6 +94,9 @@ export class DependencyAnalyser {
         this._countService = new CountService(this);
 
         const scanDir = options.scanDir;
+
+        // read package.json
+        this.packageJson = JSON.parse(fs.readFileSync(path.join(options.rootDir, "package.json"), "utf-8"));
 
         if (fs.existsSync(scanDir)) {
             let lstatSync = fs.lstatSync(scanDir);

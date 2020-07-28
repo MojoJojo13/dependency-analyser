@@ -8,6 +8,43 @@
     <script src="../src/presentation/templates/uikit/uikit.min.js"></script>
     <script src="../src/presentation/templates/uikit/uikit-icons.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load("current", {packages: ["corechart"]});
+        google.charts.setOnLoadCallback(drawChart);
+
+        function drawChart() {
+            var data = google.visualization.arrayToDataTable([
+                ["", "field", 'logger', 'cp', 'fs', 'http', 'net', 'path', 'url', 'WebSocket'],
+                ["", 8, 9, 1, 2, 5, 3, 4, 1, 4]
+            ]);
+
+            var view = new google.visualization.DataView(data);
+
+            var options = {
+                title: "Import Distribution",
+                // width: 600,
+                height: 100,
+                bar: {groupWidth: "40%"},
+                hAxis: {format: '0'},
+                legend: {position: 'top', maxLines: 3},
+                isStacked: true,
+                series: {
+                    0: {color: 'grey'},
+                    1: {color: 'grey'},
+                    2: {color: 'grey'},
+                    3: {color: 'grey'},
+                    4: {color: '#1e87f0'},
+                    5: {color: 'grey'},
+                    6: {color: 'grey'},
+                    7: {color: 'grey'},
+                    8: {color: 'grey'}
+                }
+            };
+            var chart = new google.visualization.BarChart(document.getElementById("barchart_values"));
+            chart.draw(view, options);
+        }
+    </script>
     <style>
         pre {
             font: 12px/1.4 Consolas, "Liberation Mono", Menlo, Courier, monospace;
@@ -57,6 +94,8 @@
         <li><a href="ModuleView.html">@coder/logger</a></li>
         <li><span>api.ts</span></li>
     </ul>
+        <a href="" uk-totop data-uk-sticky></a>
+        <div id="barchart_values"></div>
     <table class="coverage">
         <tr>
             <td class="line-count">

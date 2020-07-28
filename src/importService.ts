@@ -10,7 +10,7 @@ export class ImportScanner {
     private _dependencyAnalyser: DependencyAnalyser;
     private _fileName: string;
     private _source: ts.SourceFile;
-    private _importMap = new Map<string, Declaration>();
+    private _importMap = new Map<string, ImportDeclaration>();
     private _variableMap = new Map<string, Declaration>();
     private _counts = new Map<string, number>();
 
@@ -20,8 +20,8 @@ export class ImportScanner {
         this.source = source;
 
         // printChildren(source);
-        console.log("-------------------");
-        console.log("fileName", fileName);
+        // console.log("-------------------");
+        // console.log("fileName", fileName);
         this.scanSource(source, null, source);
         // console.log("-------------------");
     }
@@ -32,54 +32,7 @@ export class ImportScanner {
         node.forEachChild(child => {
             switch (child.kind) {
                 case ts.SyntaxKind.ImportDeclaration:
-                    const importDeclaration = new ImportDeclaration(child);
-                    const importSpecifiers = importDeclaration.getImportSpecifiers();
-
-                    // find and set the SourceFile
-                    const importSpecifier = importDeclaration.getModuleSpecifier();
-
-                    // is it a local module, which starts with '../' or './' ?
-                    if (RegExp('^(\\.\\.|\\.)(\\/)').test(importSpecifier)) {
-                        const dtsFileName = path.join(path.dirname(this.fileName), importSpecifier) + ".d.ts";
-                        const sourceFile = this.dependencyAnalyser.dtsCreator.exportSourceFileMap.get(dtsFileName);
-
-                        // console.assert(sourceFile, "SourceFile not found or not existing");
-                        if (sourceFile) {
-                            importDeclaration.sourceFile = sourceFile;
-                        } else {
-                            console.error("No source File found!");
-                        }
-
-                        // NEEDS TO BE HANDLED SEPARATELY
-                        // let importCount = new ImportCount(this.fileName, importDeclaration, undefined, false, true);
-                        // this.dependencyAnalyser.countService.addImportCount(importCount);
-                    } else {
-                        const options = {paths: [this.dependencyAnalyser.options.nodeModulesDir]};
-                        const modulePath = require.resolve(importDeclaration.getModuleSpecifier(), options);
-                        const isNodeModule = !path.isAbsolute(modulePath);
-
-                        // let sourceFile1 = this.dependencyAnalyser.getModuleSourceFile(importSpecifier);
-                        // importDeclaration.sourceFile = sourceFile1; // FixMe: trouble with resolving
-
-                        let importCount = new ImportCount(this.fileName, importDeclaration, sourceFile, isNodeModule, false);
-                        this.dependencyAnalyser.countService.addImportCount(importCount);
-
-                        // FUN WITH COUNT
-                        // console.log("sourceFile.getCountMemberMap()", sourceFile.getCountMemberMap());
-
-                    }
-
-                    if (importSpecifiers.length === 0 && importDeclaration.getModuleSpecifier() !== "") {
-                        console.log("importDeclaration.getModuleSpecifier()", importDeclaration.getModuleSpecifier());
-
-                        //TODO: do something with: import "./simpleExports"
-                    }
-
-                    // TODO: follow only dependencies
-                    importSpecifiers.forEach(function (value: string) {
-                        this.importMap.set(value, importDeclaration);
-                    }.bind(this));
-
+                    handleImportDeclaration(this, child, sourceFile);
                     break;
 
                 // case ts.SyntaxKind.VariableDeclarationList:
@@ -107,11 +60,7 @@ export class ImportScanner {
                     if (ts.isIdentifier(child)) {
                         let name = child.escapedText.toString();
                         let importDeclaration = this.importMap.get(name);
-                        if (importDeclaration) {
-                            // console.log("child", child);
-                            // let code = sourceFile.text.substr(child.pos, child.end - child.pos);
-                            // console.log("code", code);
-
+                        if (importDeclaration && importDeclaration.isDependency) {
                             const usageCount = new UsageCount(this.fileName, importDeclaration, child);
                             this.dependencyAnalyser.countService.addUsageCount(usageCount);
                         }
@@ -170,6 +119,71 @@ export class ImportScanner {
 
     set counts(value: Map<string, number>) {
         this._counts = value;
+    }
+}
+
+function handleImportDeclaration(that: ImportScanner, node: ts.Node, sourceFile: ts.SourceFile){
+    const importDeclaration = new ImportDeclaration(node);
+    const importSpecifiers = importDeclaration.getImportSpecifiers();
+
+    // find and set the SourceFile
+    const importSpecifier = importDeclaration.getModuleSpecifier();
+
+    // is it a local module, which starts with '../' or './' ?
+    // if (RegExp('^(\\.\\.|\\.)(\\/)').test(importSpecifier)) {
+
+    try {
+        const options = {paths: [that.dependencyAnalyser.options.nodeModulesDir]};
+        const modulePath = require.resolve(importDeclaration.getModuleSpecifier(), options);
+        const isNodeModule = !path.isAbsolute(modulePath);
+
+        if (RegExp('^(\\.\\.|\\.)(\\/)').test(importSpecifier)) {
+            handleCustomImport();
+            return;
+        }
+
+        // let sourceFile1 = this.dependencyAnalyser.getModuleSourceFile(importSpecifier);
+        // importDeclaration.sourceFile = sourceFile1; // FixMe: trouble with resolving
+
+        let importCount = new ImportCount(that.fileName, importDeclaration, sourceFile, isNodeModule, false);
+        that.dependencyAnalyser.countService.addImportCount(importCount);
+
+        importDeclaration.isDependency = true;
+
+        // FUN WITH COUNT
+        // console.log("sourceFile.getCountMemberMap()", sourceFile.getCountMemberMap());
+    } catch (err) {
+        // console.error("Error in file: ", this.fileName);
+        // console.error(err);
+
+        handleCustomImport();
+    }
+
+    if (importSpecifiers.length === 0 && importDeclaration.getModuleSpecifier() !== "") {
+        console.log("importDeclaration.getModuleSpecifier()", importDeclaration.getModuleSpecifier());
+
+        //TODO: do something with: import "./simpleExports"
+    }
+
+    // TODO: follow only dependencies
+    importSpecifiers.forEach(function (value: string) {
+        that.importMap.set(value, importDeclaration);
+    }.bind(this));
+
+    function handleCustomImport() {
+        const dtsFileName = path.join(path.dirname(that.fileName), importSpecifier) + ".d.ts";
+        const sourceFile = that.dependencyAnalyser.dtsCreator.exportSourceFileMap.get(dtsFileName);
+
+        // console.assert(sourceFile, "SourceFile not found or not existing");
+        if (sourceFile) {
+            importDeclaration.sourceFile = sourceFile;
+        } else {
+            console.error("No source File found!");
+        }
+
+        // NEEDS TO BE HANDLED SEPARATELY
+        // let importCount = new ImportCount(this.fileName, importDeclaration, undefined, false, true);
+        // this.dependencyAnalyser.countService.addImportCount(importCount);
     }
 }
 

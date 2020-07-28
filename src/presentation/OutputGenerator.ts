@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import {ImportCount, UsageCount} from "./Counter";
 import * as pug from "pug";
-
+// import { getSizes } from "package-size";
 const getSizes = require('package-size');
 
 const HTML_TEMPLATE_FILES = {
@@ -35,7 +35,8 @@ export class OutputGenerator {
         const dependencyNameMap = this.countService.groupByDependencyName();
         const scanDir = this.countService.dependencyAnalyser.options.scanDir;
         const targetDir = this.countService.dependencyAnalyser.options.targetDir;
-
+        const allDependencies: object = this.countService.dependencyAnalyser.packageJson["dependencies"];
+        console.log("allDependencies", allDependencies);
         this.date = new Date();
 
         this.cleanRootFolder();
@@ -43,7 +44,7 @@ export class OutputGenerator {
 
         // create index file
         new Promise<any>(resolve => {
-            resolve(this.generateIndex(dependencyNameMap));
+            resolve(this.generateIndex(dependencyNameMap, allDependencies));
         }).then(outputHTML => {
             this.createHtmlFile(path.join(targetDir, "index.html"), outputHTML);
         });
@@ -103,71 +104,65 @@ export class OutputGenerator {
         });
     }
 
-    private async generateIndex(dependencies: Map<string, ImportCount[]>): Promise<any> {
+    private async generateIndex(dependencies: Map<string, ImportCount[]>, allDependencies: object): Promise<any> {
         // Compile the source code
         const compiledFunction = pug.compileFile(path.join(__dirname, HTML_TEMPLATE_FILES.INDEX));
         const dependencyData = [];
         const nodeModulesData = [];
-        // const customModulesData = [];
         const chartData = [{
             elementId: "dependenciesChart",
             title: "Dependency Imports",
-            data: [["", ""]]
+            data: []
         }, {
             elementId: "nodeModulesChart",
-            title: "Node Module Imports",
-            data: [["", ""]]
+            title: "Minified Size of Dependency in kB",
+            data: []
         }, {
             elementId: "customModulesChart",
             title: "Custom Module Imports",
-            data: [["", ""]]
+            data: []
         }];
+        const emptySizeInfo = {
+            sizeOnDisk: 0,
+            sizeInKB: 0,
+            minifiedInKB: 0,
+            gzippedInKB: 0,
+            sizeInfo: 0
+        };
 
-        // Prepare data
+        // separate dependency modules from NodeJs modules
         dependencies.forEach((value, key) => {
             if (value[0].isNodeModule) {
-                nodeModulesData.push({name: key, count: value.length});
+                nodeModulesData.push({
+                    name: key,
+                    count: value.length,
+                    sizeInfo: emptySizeInfo,
+                });
             } else {
-                // if (value[0].isCustomImport) {
-                //     customModulesData.push({name: key, count: value.length});
-                // } else {
-                //
-                // }
                 dependencyData.push({name: key, count: value.length});
             }
         });
 
-        dependencyData.sort((a, b) => {
-            return b.count - a.count;
-        });
-
-        nodeModulesData.sort((a, b) => {
-            return b.count - a.count;
-        });
-
-        // customModulesData.sort((a, b) => {
-        //     return b.count - a.count;
-        // });
-
+        // calculate sizes of  dependencies
         let promisesArray = [];
-        dependencyData.forEach(value => {
 
+        dependencyData.forEach(value => {
             const nodeModulesPath = this.countService.dependencyAnalyser.options.nodeModulesDir;
 
+            // prepare chart data for [dependency -> imports in files]
             chartData[0].data.push([value.name, value.count]);
 
-            // Calculate sizes of modules
             promisesArray.push(
                 getSizes(value.name, {
                     resolve: [nodeModulesPath]
                 }).then(data => {
-                    // data = {
-                    //       name: 'react,react-dom',
-                    //       size: 12023, // in bytes
-                    //       minified: 2342,
-                    //       gzipped: 534,
-                    //       versionedName: 'react@16.0.0,react-dom@16.0.0'
-                    //     }
+                    /* data = {
+                          name: 'react,react-dom',
+                          size: 12023, // in bytes
+                          minified: 2342,
+                          gzipped: 534,
+                          versionedName: 'react@16.0.0,react-dom@16.0.0'
+                        } */
 
                     data["sizeOnDisk"] = convertToKb(getSizeOnDiskRek(path.join(nodeModulesPath, data.name)));
                     data["sizeInKB"] = convertToKb(data.size);
@@ -175,51 +170,88 @@ export class OutputGenerator {
                     data["gzippedInKB"] = convertToKb(data.gzipped);
                     value["sizeInfo"] = data;
 
-                    function convertToKb(x: number) {
-                        return (x / 1024).toFixed(x / 1024 < 0.1 ? 3 : 1);
+                    chartData[1].data.push([value.name, parseFloat(data["minifiedInKB"])]);
+                    chartData[2].data.push([value.name, parseFloat(data["minifiedInKB"]) / value.count]);
+
+                    // prepare chart data for [dependency -> minified size]
+                    // dependencyData.forEach(value => {
+                    //     chartData[1].data.push([value.name, value.sizeInfo.minifiedInKB]);
+                    // });
+
+                }).catch(err => {
+                    value["sizeInfo"] = {
+                        sizeOnDisk: convertToKb(getSizeOnDiskRek(path.join(nodeModulesPath, value.name)))
                     }
-
-                    function getSizeOnDiskRek(dirPath: string) {
-                        let size = 0;
-                        let itemStats = fs.lstatSync(dirPath);
-
-                        if (itemStats.isDirectory()) {
-                            let allSubs = fs.readdirSync(dirPath);
-                            {
-                                allSubs.forEach(sub => {
-                                    size += getSizeOnDiskRek(path.join(dirPath, sub));
-                                });
-                            }
-                        } else {
-                            size = itemStats.size;
-                        }
-
-                        return size;
-                    }
+                    console.error(err);
                 })
             );
         });
 
-        nodeModulesData.forEach(value => {
-            chartData[1].data.push([value.name, value.count]);
+        // add all not used dependencies from the package.json
+        Object.keys(allDependencies).forEach(dependencyName => {
+            if (!dependencyData.some(value => value.name === dependencyName)) {
+                dependencyData.push({
+                    name: dependencyName,
+                    count: 0,
+                    sizeInfo: emptySizeInfo
+                });
+            }
         });
 
-        // customModulesData.forEach(value => {
-        //     chartData[2].data.push([value.name, value.count]);
-        // });
+        // sort
+        dependencyData.sort((a, b) => b.count - a.count);
+        nodeModulesData.sort((a, b) => b.count - a.count);
 
         await Promise.all(promisesArray);
 
-        // Render a set of data
+
+        chartData[1].data.sort(((a, b) => b[1] - a[1]));
+
+        chartData[2].data.sort(((a, b) => b[1] - a[1]));
+        console.log("chartData", chartData[2]);
+
+        let sum = 0;
+        chartData[2].data.forEach(value => {
+            sum += value[1]
+        });
+        const average = sum / chartData[2].data.length;
+        console.log("average", average);
+
+        chartData.forEach(value => {
+            value.data.unshift(["", ""]);
+        });
+
+        // render a set of data
         return compiledFunction({
             title: 'Overview',
             folder: './',
             chartData: chartData,
             dependencies: dependencyData,
             nodeModules: nodeModulesData,
-            // customModules: customModulesData,
             date: this.date
         });
+
+        function convertToKb(x: number) {
+            return (x / 1024).toFixed(x / 1024 < 0.1 ? 3 : 1);
+        }
+
+        function getSizeOnDiskRek(dirPath: string) {
+            let size = 0;
+            let itemStats = fs.lstatSync(dirPath);
+
+            if (itemStats.isDirectory()) {
+                let allSubs = fs.readdirSync(dirPath);
+                {
+                    allSubs.forEach(sub => {
+                        size += getSizeOnDiskRek(path.join(dirPath, sub));
+                    });
+                }
+            } else {
+                size = itemStats.size;
+            }
+
+            return size;
+        }
     }
 
     private generateModules(dependencyName: string, importCountArray: ImportCount[]): any {
@@ -308,51 +340,49 @@ export class OutputGenerator {
 
     private generateFileContent(importCounts: ImportCount[], usageCountArray: UsageCount[], shortFileName: string): any {
         const compiledFunction = pug.compileFile(path.join(__dirname, HTML_TEMPLATE_FILES.CODE));
-        let formattedContent = importCounts[0].sourceFile.text
-        // .replace(/</gi, "&lt;")
-        // .replace(/>/gi, "&gt;");
+        const formattedContent = importCounts[0].sourceFile.text;
         const lineCount = (formattedContent.match(/\n/g) || []).length;
         const slashCount = (shortFileName.match(/\\/g) || []).length;
+        const importsArray = [];
         const usageArray = [];
+        const countMap = new Map<string, number>();
+        const tempCountArr = [], countArray = [[""], [""]];
 
-        // console.log("shortFileName", shortFileName);
-        
+        // prepare data to mark imports
+        importCounts.forEach(importCount => {
+            importsArray.push({
+                moduleSpecifier: importCount.importDeclaration.getModuleSpecifier(),
+                importSpecifiers: importCount.importDeclaration.getImportSpecifiers(),
+                isEntireModuleImported: importCount.importDeclaration.isEntireModuleImported(),
+                lineCount: getLineCountToOccurrence(importCount.importDeclaration.node.end)
+            });
+        });
+
+        // prepare data to mark imported stuff, when used
         usageCountArray.forEach(value => {
             const identifier = value.identifier;
             const identifierName = identifier.escapedText.toString();
 
-            let code1 = formattedContent.substring(0, identifier.end);
-            const lineCountToOccurrence = (code1.match(/\n/g) || []).length;
-
             usageArray.push({
-                "lineCount": lineCountToOccurrence + 1,
-                "identifierName": identifierName,
-                "dependencyName": value.dependencyName
+                lineCount: getLineCountToOccurrence(identifier.end),
+                identifierName: identifierName,
+                dependencyName: value.dependencyName
             });
 
-            // console.log("lineCountToOccurrence", lineCountToOccurrence);
-            // console.log("identifierName", identifierName);
-            // console.log("value.dependencyName", );
-            // console.log();
+            // Count the usages for the chart
+            countMap.set(identifierName, countMap.get(identifierName) >= 0 ? countMap.get(identifierName) + 1 : 1);
+        });
 
-            //----------------------
-            // formattedContent.replace(/(.{identifier.pos}).{identifier.end - identifier.pos}/,"TDTD")
-            // let code = formattedContent.substr(identifier.pos, identifier.end - identifier.pos)
-            //     .replace(identifierName, "&" + identifierName + "&");
-            // code.replace(identifier.escapedText.toString(), match => {
-            //     console.log("match", match);
-            //     return "ABCDEFG"
-            // });
-            //     console.log("code", code);
-            // var expression = "(.{" + identifier.pos + ").{" + (identifier.end - identifier.pos) + "}";
-            // formattedContent.replace(new RegExp(expression, "g"), function(match, p1, p2, p3, offset, string){
-            //
-            //     return match;
-            // })
-            // console.log(code.match(identifier.escapedText.toString()));
-            // formattedContent = formattedContent.substr(0, identifier.pos) + code + formattedContent.substr(identifier.end, formattedContent.length);
-            // console.log("code", code);
-
+        countMap.forEach((value, key) => {
+            tempCountArr.push([key, value]);
+        });
+        tempCountArr.sort((a, b) => b[1] - a[1]);
+        tempCountArr.forEach(value => {
+            countArray[0].push(value[0]);
+            // @ts-ignore
+            countArray[0].push({role: 'annotation'});
+            countArray[1].push(value[1]);
+            countArray[1].push(value[1].toString());
         });
 
         return compiledFunction({
@@ -361,9 +391,16 @@ export class OutputGenerator {
             folder: '../'.repeat(slashCount + 1),
             sourceCode: formattedContent,
             lineCount: lineCount,
+            importsArray: importsArray,
             usageArray: usageArray,
+            countArray: countArray,
             date: this.date
         });
+
+        function getLineCountToOccurrence(endPosition: number): number {
+            const code = formattedContent.substring(0, endPosition);
+            return (code.match(/\n/g) || []).length + 1;
+        }
     }
 
 }
