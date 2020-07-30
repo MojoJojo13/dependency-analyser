@@ -18,7 +18,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/imp
 [✗] var promise = import("module-name");
 ```
 ```typescript
-require("module"); // is not supported
+const module = require("module"); // is not supported
 ```
 
 ## What is counted?

@@ -359,6 +359,7 @@ export class OutputGenerator {
         });
 
         // prepare data to mark imported stuff, when used
+        if (!usageCountArray) usageCountArray = [];
         usageCountArray.forEach(value => {
             const identifier = value.identifier;
             const identifierName = identifier.escapedText.toString();
