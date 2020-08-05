@@ -1,7 +1,15 @@
 import {MyClass} from "./exports"
-const yargs = require("yargs");
+// import * as path from "path"
+const path = require("path"), fs = require("fs");
+const css = require("src\\presentation\\templates\\css\\custom.css");
+const asd = require("./exports");
+const asd1 = require("@types/node");
+
+let b = new asd.MyClass();
 
 MyClass.myStaticMethod();
+
+path.join("abc", "cde");
 
 {
     MyClass("hallo", 4);

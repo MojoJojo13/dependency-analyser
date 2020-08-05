@@ -147,12 +147,14 @@ export class ImportDeclaration extends Declaration {
     set fileName(value: string) {
         this._fileName = value;
     }
+
     /**
      * @deprecated
      */
     get exportScanner(): ExportScanner {
         return this._exportScanner;
     }
+
     /**
      * @deprecated
      */
@@ -166,6 +168,61 @@ export class ImportDeclaration extends Declaration {
 
     set sourceFile(value: SourceFile) {
         this._sourceFile = value;
+    }
+
+    get isDependency(): boolean {
+        return this._isDependency;
+    }
+
+    set isDependency(value: boolean) {
+        this._isDependency = value;
+    }
+}
+
+export class RequireDeclaration extends Declaration {
+    private _isDependency: boolean;
+
+    isEntireModuleImported(): boolean {
+        return true;
+    }
+
+    getImportSpecifiers(): string[] {
+        if (ts.isIdentifier(this.node.name)) {
+            return [this.node.name.escapedText.toString()];
+        }
+
+        return [];
+    }
+
+    getModuleSpecifier(): string {
+        let initializer = this.node.initializer;
+
+        if (initializer && ts.isAsExpression(initializer)) {
+            initializer = initializer.expression;
+        }
+
+        if (ts.isCallExpression(initializer)) {
+            const identifier = initializer.expression;
+
+            if (ts.isIdentifier(identifier)) {
+                if (identifier.originalKeywordKind === ts.SyntaxKind.RequireKeyword) {
+                    const moduleIdentifier = initializer.arguments[0];
+                    if (ts.isStringLiteral(moduleIdentifier)) {
+                        return moduleIdentifier.text.toString();
+                    }
+                }
+            }
+        }
+
+        return "";
+    }
+
+    get node(): ts.VariableDeclaration {
+        return <ts.VariableDeclaration>this._node;
+    }
+
+    set node(value: ts.VariableDeclaration) {
+        this._node = value;
     }
 
     get isDependency(): boolean {

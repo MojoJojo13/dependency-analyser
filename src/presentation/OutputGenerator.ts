@@ -1,10 +1,9 @@
-import {CountService} from "./CountService";
-import * as fs from "fs";
-import * as path from "path";
-import {ImportCount, UsageCount} from "./Counter";
 import * as pug from "pug";
-// import { getSizes } from "package-size";
-const getSizes = require('package-size');
+import * as getSizes from "package-size";
+import * as path from "path";
+import * as fs from "fs";
+import {CountService} from "./CountService";
+import {ImportCount, UsageCount} from "./Counter";
 
 const HTML_TEMPLATE_FILES = {
     "INDEX": "templates/html/index.pug",
@@ -36,7 +35,6 @@ export class OutputGenerator {
         const scanDir = this.countService.dependencyAnalyser.options.scanDir;
         const targetDir = this.countService.dependencyAnalyser.options.targetDir;
         const allDependencies: object = this.countService.dependencyAnalyser.packageJson["dependencies"];
-        console.log("allDependencies", allDependencies);
         this.date = new Date();
 
         this.cleanRootFolder();
@@ -79,9 +77,6 @@ export class OutputGenerator {
 
         if (!fs.existsSync(tarPath)) {
             fs.mkdirSync(tarPath);
-        } else {
-            // fs.rmdirSync(tarPath, {recursive: true});
-            // fs.mkdirSync(tarPath);
         }
     }
 
@@ -107,6 +102,7 @@ export class OutputGenerator {
     private async generateIndex(dependencies: Map<string, ImportCount[]>, allDependencies: object): Promise<any> {
         // Compile the source code
         const compiledFunction = pug.compileFile(path.join(__dirname, HTML_TEMPLATE_FILES.INDEX));
+        const nodeModulesPath = this.countService.dependencyAnalyser.options.nodeModulesDir;
         const dependencyData = [];
         const nodeModulesData = [];
         const chartData = [{
@@ -122,13 +118,6 @@ export class OutputGenerator {
             title: "Custom Module Imports",
             data: []
         }];
-        const emptySizeInfo = {
-            sizeOnDisk: 0,
-            sizeInKB: 0,
-            minifiedInKB: 0,
-            gzippedInKB: 0,
-            sizeInfo: 0
-        };
 
         // separate dependency modules from NodeJs modules
         dependencies.forEach((value, key) => {
@@ -136,7 +125,6 @@ export class OutputGenerator {
                 nodeModulesData.push({
                     name: key,
                     count: value.length,
-                    sizeInfo: emptySizeInfo,
                 });
             } else {
                 dependencyData.push({name: key, count: value.length});
@@ -147,7 +135,6 @@ export class OutputGenerator {
         let promisesArray = [];
 
         dependencyData.forEach(value => {
-            const nodeModulesPath = this.countService.dependencyAnalyser.options.nodeModulesDir;
 
             // prepare chart data for [dependency -> imports in files]
             chartData[0].data.push([value.name, value.count]);
@@ -173,16 +160,11 @@ export class OutputGenerator {
                     chartData[1].data.push([value.name, parseFloat(data["minifiedInKB"])]);
                     chartData[2].data.push([value.name, parseFloat(data["minifiedInKB"]) / value.count]);
 
-                    // prepare chart data for [dependency -> minified size]
-                    // dependencyData.forEach(value => {
-                    //     chartData[1].data.push([value.name, value.sizeInfo.minifiedInKB]);
-                    // });
-
                 }).catch(err => {
-                    value["sizeInfo"] = {
-                        sizeOnDisk: convertToKb(getSizeOnDiskRek(path.join(nodeModulesPath, value.name)))
-                    }
-                    console.error(err);
+                    // value["sizeInfo"] = {
+                    //     sizeOnDisk: convertToKb(getSizeOnDiskRek(path.join(nodeModulesPath, value.name)))
+                    // }
+                    // console.error(err);
                 })
             );
         });
@@ -193,7 +175,6 @@ export class OutputGenerator {
                 dependencyData.push({
                     name: dependencyName,
                     count: 0,
-                    sizeInfo: emptySizeInfo
                 });
             }
         });
@@ -204,18 +185,21 @@ export class OutputGenerator {
 
         await Promise.all(promisesArray);
 
+        // add missing size info
+        dependencyData.forEach(dependency => {
+            if (!dependency.sizeInfo) {
+                dependency.sizeInfo = {
+                    sizeOnDisk: convertToKb(getSizeOnDiskRek(path.join(nodeModulesPath, dependency.name))),
+                    sizeInKB: 0,
+                    minifiedInKB: 0,
+                    gzippedInKB: 0,
+                    sizeInfo: 0
+                }
+            }
+        });
 
         chartData[1].data.sort(((a, b) => b[1] - a[1]));
-
         chartData[2].data.sort(((a, b) => b[1] - a[1]));
-        console.log("chartData", chartData[2]);
-
-        let sum = 0;
-        chartData[2].data.forEach(value => {
-            sum += value[1]
-        });
-        const average = sum / chartData[2].data.length;
-        console.log("average", average);
 
         chartData.forEach(value => {
             value.data.unshift(["", ""]);
@@ -231,8 +215,13 @@ export class OutputGenerator {
             date: this.date
         });
 
-        function convertToKb(x: number) {
-            return (x / 1024).toFixed(x / 1024 < 0.1 ? 3 : 1);
+        function convertToKb(x: number): string {
+            // return parseFloat((x / 1024).toFixed(x / 1024 < 0.1 ? 3 : 1));
+            return new Intl.NumberFormat(
+                Intl.NumberFormat().resolvedOptions().locale, {
+                    maximumFractionDigits: 1
+                }
+            ).format(x / 1024);
         }
 
         function getSizeOnDiskRek(dirPath: string) {
@@ -257,12 +246,9 @@ export class OutputGenerator {
     private generateModules(dependencyName: string, importCountArray: ImportCount[]): any {
         const compiledFunction = pug.compileFile(path.join(__dirname, HTML_TEMPLATE_FILES.MODULE));
         const slashCount = (dependencyName.match(/\//g) || []).length;
-        // const filesTree = this.countService.dependencyAnalyser.filesTree;
         const filesObject = this.countService.dependencyAnalyser.filesObject;
 
         // Prepare Data
-        // const convertedData = transformDataRek(filesObject, "dependency-analysis/details");
-        // console.log("filesObject", );
         const convertedData = fillUpData(filesObject, "details");
 
 
@@ -301,41 +287,6 @@ export class OutputGenerator {
 
             return dataObj;
         }
-
-        // Transforms the files tree map to an object with all necessary info for the frontend
-        // function transformDataRek(filesTree, combinedPath: string): any {
-        //     let dataObj = {};
-        //
-        //     filesTree.forEach((value, key) => {
-        //         const extension = path.parse(key).ext;
-        //         if (extension && extension !== ".ts") return; // remove non .ts files
-        //
-        //         const shortName = path.parse(key).base;
-        //         dataObj[shortName] = {};
-        //
-        //         if (value) { // check if it's a folder
-        //             let subfolders = transformDataRek(<Map<string, object>>value, path.join(combinedPath, shortName));
-        //
-        //             if (Object.keys(subfolders).length) { // folder not empty
-        //                 dataObj[shortName].children = subfolders;
-        //             } else { // folder is empty
-        //                 delete dataObj[shortName];
-        //             }
-        //         }
-        //
-        //         let usedImport = importCountArray.find(element => element.fileName === key);
-        //         if (usedImport) {
-        //
-        //             filesTree[shortName].adds = {
-        //                 "link": path.join("../".repeat(slashCount + 2), combinedPath, shortName) + ".html?module=" + dependencyName,
-        //                 "imports": usedImport.importDeclaration.isEntireModuleImported() ?
-        //                     ["*"] : usedImport.importDeclaration.getImportSpecifiers()
-        //             }
-        //         }
-        //     });
-        //
-        //     return filesTree;
-        // }
     }
 
     private generateFileContent(importCounts: ImportCount[], usageCountArray: UsageCount[], shortFileName: string): any {

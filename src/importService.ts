@@ -1,10 +1,9 @@
 import * as ts from "typescript";
 import * as path from "path";
-import {Declaration, ImportDeclaration} from "./Declarations";
+import {Declaration, ImportDeclaration, RequireDeclaration} from "./Declarations";
 import {DependencyAnalyser} from "./DependencyAnalyser";
 import {printChildren} from "./util";
 import {ImportCount, UsageCount} from "./presentation/Counter";
-import {forEachChild} from "typescript";
 
 type Declarations =
     ts.ClassDeclaration
@@ -32,6 +31,11 @@ export class ImportScanner {
         // printChildren(source);
         // console.log("-------------------");
         // console.log("fileName", fileName);
+        // if (fileName === "C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server\\src\\node\\util.ts") {
+        //     console.log("-------------------");
+        //     printChildren(source);
+        //     console.log("-------------------");
+        // }
         this.scanSource(source, null, source);
         // console.log("-------------------");
 
@@ -50,13 +54,13 @@ export class ImportScanner {
                 case ts.SyntaxKind.VariableDeclarationList:
                     // handleVariableDeclarationList(child as ts.VariableDeclarationList, this.importMap);
                     this.handleVariableDeclarationList(child as ts.VariableDeclarationList);
-                    // this.scanSource(child, node, sourceFile);
+                    this.scanSource(child, node, sourceFile);
                     break;
 
                 case ts.SyntaxKind.ClassDeclaration:
                 case ts.SyntaxKind.EnumDeclaration:
                     this.handleDeclaration(child as Declarations);
-                    // this.scanSource(child, node, sourceFile);
+                    this.scanSource(child, node, sourceFile);
                     break;
 
                 case ts.SyntaxKind.ArrowFunction:
@@ -139,13 +143,15 @@ export class ImportScanner {
             // console.log("variableDeclaration", variableDeclaration);
             // this.handleVariableDeclaration(variableDeclaration as ts.VariableDeclaration);
             // console.log("variableDeclaration", variableDeclaration);
+            // this.handleRequireModule(variableDeclaration as ts.VariableDeclaration);
             this.handleDeclaration(variableDeclaration as ts.VariableDeclaration);
         });
 
     }
 
     private handleDeclaration(declaration: Declarations) {
-        let name = declaration.name;
+        const name = declaration.name;
+
         if (ts.isIdentifier(name)) {
             const nameText = name.escapedText.toString();
             // console.log("nameText", nameText);
@@ -160,7 +166,7 @@ export class ImportScanner {
             console.log("Can't handle this type of VariableDeclaration.Name, so skip it");
         }
 
-        this.scanSource(declaration, null, null);
+        // this.scanSource(declaration, null, null);
 
         // declaration.forEachChild(child => {
         //     this.scanSource(child, null, null);
@@ -186,6 +192,44 @@ export class ImportScanner {
         }
 
         this.handleBlockEnd();
+    }
+
+    private handleRequireModule(variableDeclaration: ts.VariableDeclaration) {
+        let initializer = variableDeclaration.initializer;
+        
+        if (initializer && ts.isAsExpression(initializer)) {
+            initializer = initializer.expression;
+        }
+
+        if (initializer && ts.isCallExpression(initializer)) {
+            const identifier = initializer.expression;
+
+            if (ts.isIdentifier(identifier)) {
+
+                if (identifier.originalKeywordKind === ts.SyntaxKind.RequireKeyword) {
+                    const requireDeclaration = new RequireDeclaration(variableDeclaration);
+                    // const importSpecifiers = requireDeclaration.getImportSpecifiers();
+                    const moduleSpecifier = requireDeclaration.getModuleSpecifier();
+
+                    try {
+                        const options = {paths: [this.dependencyAnalyser.options.nodeModulesDir]};
+                        const modulePath = require.resolve(moduleSpecifier, options);
+                        const isNodeModule = !path.isAbsolute(modulePath);
+
+                        if (RegExp('^(\\.\\.|\\.)(\\/)').test(moduleSpecifier)) {
+                            return;
+                        }
+
+                        let importCount = new ImportCount(this.fileName, requireDeclaration, this.source, isNodeModule, false);
+                        this.dependencyAnalyser.countService.addImportCount(importCount);
+
+                        requireDeclaration.isDependency = true;
+                    } catch (err) {
+                        console.error("Could not find module:", moduleSpecifier);
+                    }
+                }
+            }
+        }
     }
 
     private findImportDeclaration(name: string) {
@@ -263,7 +307,7 @@ function handleImportDeclaration(that: ImportScanner, node: ts.Node, sourceFile:
         const isNodeModule = !path.isAbsolute(modulePath);
 
         if (RegExp('^(\\.\\.|\\.)(\\/)').test(importSpecifier)) {
-            handleCustomImport();
+            // handleCustomImport();
             return;
         }
 
@@ -281,7 +325,7 @@ function handleImportDeclaration(that: ImportScanner, node: ts.Node, sourceFile:
         // console.error("Error in file: ", this.fileName);
         // console.error(err);
 
-        handleCustomImport();
+        // handleCustomImport();
     }
 
     if (importSpecifiers.length === 0 && importDeclaration.getModuleSpecifier() !== "") {

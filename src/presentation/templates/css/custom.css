@@ -120,6 +120,10 @@ table.coverage td span.cline-any {
     /*width: 100%;*/
 }
 
+.mark a {
+    color: black;
+}
+
 .cline-yes {
     background-color: #5bff5e !important;
 }

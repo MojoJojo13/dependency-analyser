@@ -1,15 +1,13 @@
 #!/usr/bin/env node
 import * as fs from "fs";
 import * as path from "path";
-import * as ts from "typescript";
-import {FileHandler} from "./fileHandler";
+import * as yargs from "yargs";
 import {DependencyAnalyser} from "./DependencyAnalyser";
 
 console.log("__dirname", __dirname);
 console.log('process.argv', process.argv);
-// console.log('process.argv', process.argv.slice(2));
 
-const yargs = require("yargs");
+// console.log('process.argv', process.argv.slice(2));
 
 export interface Options {
     rootDir: string,
@@ -112,7 +110,7 @@ console.log("options", options);
 // console.log("sPath", sPath);
 
 const dependencyAnalyser = new DependencyAnalyser(options);
-dependencyAnalyser.initDtsCreator();
+// dependencyAnalyser.initDtsCreator();
 // console.log("Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys())", Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys()));
 dependencyAnalyser.scanAllFiles();
 // console.log(dependencyAnalyser.countService.importCounts);

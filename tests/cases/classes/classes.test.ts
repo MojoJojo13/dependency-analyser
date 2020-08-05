@@ -21,6 +21,9 @@ describe('Test Class Stuff', () => {
     let dependencyAnalyser = new DependencyAnalyser(option);
     dependencyAnalyser.initDtsCreator();
     dependencyAnalyser.scanAllFiles();
+    
+    let usageCounts = dependencyAnalyser.countService.usageCounts;
+    console.log("usageCounts", usageCounts);
 
     it('should be able to add things correctly' , () => {
 

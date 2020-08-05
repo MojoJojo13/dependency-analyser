@@ -15,7 +15,36 @@ block scripts
             var importsArr = urlParams.get("imports").split(",");
             var codeElement = document.getElementsByClassName("prettyprinted")[0];
             var children = Array.from(codeElement.children);
+            var plnChildren = children.filter(child => child.classList.contains("pln") || child.classList.contains("typ"));
             var importsArray = !{JSON.stringify(importsArray)};
+            var usageArray = !{JSON.stringify(usageArray)};
+
+            // separate line breaks in code into own <span> elements, for better recognition
+            plnChildren.forEach(child => {
+                var lineBreakCount = (child.innerText.match(/\n/g) || []).length;
+                if (lineBreakCount > 0 && importsArr.some(imprt => child.innerText.includes(imprt))) {
+                    var trimArray = child.innerText.split("\n");
+
+                    child.innerText = trimArray[0];
+
+                    for (var i = lineBreakCount; i > 0; i--) {
+                        var span = document.createElement("span");
+                        span.innerText = trimArray[i];
+                        span.classList.add("pln");
+                        child.after(span);
+
+                        var newLineSpan = document.createElement("span");
+                        newLineSpan.innerText = "\n";
+                        newLineSpan.classList.add("pln");
+                        child.after(newLineSpan);
+                    }
+                }
+            });
+
+            // refresh children
+            children = Array.from(codeElement.children);
+
+            // mark all imports
             importsArray.forEach(value => {
                 var lineCounter = 1;
 
@@ -25,32 +54,30 @@ block scripts
                     if (lineCounter <= value.lineCount) {
                         if (child.innerText === '"' + value.moduleSpecifier + '"' ||
                             child.innerText === "'" + value.moduleSpecifier + "'") {
+
                             var hrefLink = "?module=" + module + "&imports=" + value.importSpecifiers.join(",");
+
                             child.innerHTML = "<a href='" + hrefLink + "'>" + child.innerText + "</a>";
                             child.classList.add("mark", "decent");
                         } else if (!value.isEntireModuleImported) {
-                            value.importSpecifiers.forEach(value1 => {
-                                if (value1 === child.innerText.trim()) {
-                                    if (importsArr.some(value2 => value2 === value1)) {
-                                        child.classList.add('mark');
 
-                                        // add counter to the line number
-                                        // var cLine = document.getElementById("cline" + lineCounter);
-                                        // var preVal = cLine.innerHTML;
-                                        // cLine.innerHTML = preVal !== "&nbsp;" ? (parseInt(preVal) + 1) + "x" : "1x";
-                                        // cLine.classList.add('cline-yes')
-                                    } else {
+                            value.importSpecifiers.forEach(importSpecifier => {
+
+                                if (importSpecifier === child.innerText.trim()) {
+
+                                    if (importsArr.some(value2 => value2 === importSpecifier)) {
                                         child.classList.add('mark');
-                                        child.classList.add('decent');
+                                    } else {
+                                        child.classList.add("mark", "decent");
                                     }
 
-                                    var hrefLink = "?module=" + module + "&imports=" + value1;
-                                    trimElement(child, hrefLink);
+                                    var hrefLink = "?module=" + module + "&imports=" + importSpecifier;
+                                    trimElement(child, importSpecifier, hrefLink);
                                 }
                             });
                         } else if (value.isEntireModuleImported) {
-                            var asRegExp = new RegExp("^as\\s+" + value.importSpecifiers[0]);
-                            if (child.innerText.trim().match(asRegExp) || child.innerText.trim() === value.importSpecifiers[0]) {
+
+                            if (isIncluded(child.innerText.trim(), value.importSpecifiers[0])) {
 
                                 if (importsArr.some(value2 => value2 === value.importSpecifiers[0])) {
                                     child.classList.add("mark");
@@ -59,21 +86,21 @@ block scripts
                                 }
 
                                 var hrefLink = "?module=" + module + "&imports=" + value.importSpecifiers[0];
-                                trimElement(child, hrefLink);
+                                trimElement(child, value.importSpecifiers[0], hrefLink);
                             }
                         }
                     }
                 });
             });
 
-            var usageArray = !{JSON.stringify(usageArray)};
+            // mark all usages
             usageArray.forEach(value => {
                 var lineCounter = 1;
 
                 children.forEach(child => {
                     lineCounter += (child.innerText.match(/\n/g) || []).length;
 
-                    if (lineCounter === value.lineCount && child.innerText.trim() === value.identifierName) {
+                    if (lineCounter === value.lineCount && isIncluded(child.innerText.trim(), value.identifierName)) {
                         if (!child.classList.contains('mark')) {
                             if (importsArr.some(value1 => value1 === value.identifierName)) {
                                 child.classList.add('mark');
@@ -84,13 +111,12 @@ block scripts
                                 cLine.innerHTML = preVal !== "&nbsp;" ? (parseInt(preVal) + 1) + "x" : "1x";
                                 cLine.classList.add('cline-yes')
                             } else {
-                                child.classList.add('mark');
-                                child.classList.add('decent');
+                                child.classList.add("mark", "decent");
                             }
                         }
 
                         var hrefLink = "?module=" + module + "&imports=" + value.identifierName;
-                        trimElement(child, hrefLink);
+                        trimElement(child, value.identifierName, hrefLink);
                     }
                 });
             });
@@ -131,11 +157,34 @@ block scripts
              * Moves all whitespaces to the previous and next element, for a better looking mark.
              * Puts the element into a Link "<a href="hrefLink">child</a>"
              */
-            function trimElement(child, hrefLink) {
-                var trimmedVal = child.innerHTML.trim();
-                child.previousSibling.innerHTML += child.innerHTML.split(trimmedVal)[0];
-                child.nextSibling.innerHTML = child.innerHTML.split(trimmedVal)[1] + child.nextSibling.innerHTML;
-                child.innerHTML = "<a href='" + hrefLink + "'>" + trimmedVal + "</a>";
+            function trimElement(child, name, hrefLink) {
+                var trimmedVal = child.innerText.split(name);
+
+                if (trimmedVal[0].length > 0) {
+                    var preSpan = document.createElement("span");
+                    preSpan.innerText = trimmedVal[0];
+                    preSpan.classList.add("pln");
+                    child.before(preSpan);
+                }
+
+                if (trimmedVal[1].length > 0) {
+                    var postSpan = document.createElement("span");
+                    postSpan.innerText = trimmedVal[1];
+                    postSpan.classList.add("pln");
+                    child.after(postSpan);
+                }
+
+                child.innerHTML = "<a href='" + hrefLink + "'>" + name + "</a>";
+            }
+
+            function isIncluded(a, b) {
+                if (a === b) {
+                    return true
+                } else if (a.match(new RegExp("^as\\s+" + b))) {
+                    return true;
+                }
+
+                return false;
             }
         }
 block content
