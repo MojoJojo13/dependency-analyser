@@ -25,14 +25,6 @@ export class DependencyAnalyser {
         this._moduleSourceFileMap = value;
     }
 
-    get moduleExportScannerMap(): Map<string, ExportScanner> {
-        return this._moduleExportScannerMap;
-    }
-
-    set moduleExportScannerMap(value: Map<string, ExportScanner>) {
-        this._moduleExportScannerMap = value;
-    }
-
     get importScannerMap(): Map<string, ImportScanner> {
         return this._importScannerMap;
     }
@@ -81,7 +73,7 @@ export class DependencyAnalyser {
     // filesTree: Map<string, object>;
     filesObject: object;
     private _importScannerMap: Map<string, ImportScanner>;
-    private _moduleExportScannerMap: Map<string, ExportScanner>;
+    // private _moduleExportScannerMap: Map<string, ExportScanner>;
     private _moduleSourceFileMap: Map<string, SourceFile>;
     private _countService: CountService;
     options: Options;
@@ -89,14 +81,14 @@ export class DependencyAnalyser {
 
     constructor(options: Options) {
         this.options = options;
-        this.moduleExportScannerMap = new Map<string, ExportScanner>();
+        // this.moduleExportScannerMap = new Map<string, ExportScanner>();
         this.moduleSourceFileMap = new Map<string, SourceFile>();
         this._countService = new CountService(this);
 
-        const scanDir = options.scanDir;
-
         // read package.json
         this.packageJson = JSON.parse(fs.readFileSync(path.join(options.rootDir, "package.json"), "utf-8"));
+
+        const scanDir = options.scanDir;
 
         if (fs.existsSync(scanDir)) {
             let lstatSync = fs.lstatSync(scanDir);
@@ -162,13 +154,6 @@ export class DependencyAnalyser {
 
             return filesObj;
         }
-    }
-
-    initDtsCreator() {
-        // console.log("this.allFiles", this.allFiles);
-        this.dtsCreator = new DtsCreator(this.allFiles);
-        // this.dtsCreator.createExportService();
-        this.dtsCreator.createSourceFiles();
     }
 
     scanAllFiles() {
@@ -281,6 +266,13 @@ export class DependencyAnalyser {
         console.log("-------------------");
 
         return sourceFile;
+    }
+
+    initDtsCreator() {
+        // console.log("this.allFiles", this.allFiles);
+        this.dtsCreator = new DtsCreator(this.allFiles);
+        // this.dtsCreator.createExportService();
+        this.dtsCreator.createSourceFiles();
     }
 
     // /**

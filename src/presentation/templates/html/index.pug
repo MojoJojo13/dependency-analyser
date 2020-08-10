@@ -27,6 +27,67 @@ block scripts
             }
         }
 
+        var tableSettings = {
+            index: 6,
+            ascending: false
+        }
+
+        function compareFunction(index, a, b) {
+            var parseSize = (x) => parseFloat(x.innerHTML.replace(new RegExp('\,', 'g'), ''));
+            var parseCount = (x) => parseInt(x.children.item(0).innerHTML.toLowerCase());
+
+            switch (index) {
+                case 0:
+                    return a.innerHTML.toLowerCase() > b.innerHTML.toLowerCase();
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                    return parseSize(a) > parseSize(b);
+                case 6:
+                    return parseCount(a) > parseCount(b);
+            }
+        }
+
+        function sortTable(index) {
+            var table = document.getElementById("dependencyTable");
+            var rows = table.rows;
+            var switching = true;
+            var shouldSwitch;
+
+            rows[0].getElementsByTagName("TH")[tableSettings.index].classList.toggle("sorted");
+            rows[0].getElementsByTagName("TH")[index].classList.toggle("sorted");
+
+            rows[0].getElementsByTagName("TH")[tableSettings.index].removeAttribute("ascending");
+
+            tableSettings.ascending = tableSettings.index === index ? !tableSettings.ascending : true;
+            tableSettings.index = index;
+
+            rows[0].getElementsByTagName("TH")[index].setAttribute('ascending', tableSettings.ascending);
+
+            // Make a loop that will continue until no switching has been done:
+            while (switching) {
+                rows = table.rows;
+                switching = false;
+
+                // Loop through all table rows (except the first, which contains table headers):
+                for (var i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+
+                    var x = rows[i].getElementsByTagName("TD")[index];
+                    var y = rows[i + 1].getElementsByTagName("TD")[index];
+
+                    shouldSwitch = tableSettings.ascending ? compareFunction(index, x, y) : compareFunction(index, y, x);
+                    if (shouldSwitch) break;
+                }
+
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
 block content
     .uk-grid-divider(class='uk-child-width-1-2@s', uk-grid='')
         div#dependenciesChart
@@ -36,32 +97,47 @@ block content
         li.uk-open
             a.uk-accordion-title(href='#') Dependencies
             div.uk-accordion-content
-                table.uk-table.uk-table-divider.uk-table-hover.uk-table-small.uk-table-justify
+                table#dependencyTable.uk-table.uk-table-divider.uk-table-hover.uk-table-small.uk-table-justify
                     thead
                         tr
-                            th Module
+                            th(onclick="sortTable(0)")
+                                span(uk-icon="triangle-up")
+                                span(uk-icon="triangle-down")
+                                | Module
                             th NPM Repo
-                            th.uk-text-right Size on Disk
-                            th.uk-text-right Size
-                                |
+                            th.uk-text-right(onclick="sortTable(2)")
+                                span(uk-icon="triangle-up")
+                                span(uk-icon="triangle-down")
+                                | Size on Disk
+                            th.uk-text-right(onclick="sortTable(3)")
+                                span(uk-icon="triangle-up")
+                                span(uk-icon="triangle-down")
+                                | Size
                                 |
                                 a(href="https://www.npmjs.com/package/package-size", target='_blank')
                                     span(uk-icon="icon: warning; ratio: 0.8", uk-tooltip="Calculated with 'package-size'. Click for more info.")
                                 // or info
                             //th Size [kB]
-                            th.uk-text-right Minified
-                                |
+                            th.uk-text-right(onclick="sortTable(4)")
+                                span(uk-icon="triangle-up")
+                                span(uk-icon="triangle-down")
+                                | Minified
                                 |
                                 a(href="https://www.npmjs.com/package/package-size", target='_blank')
                                     span(uk-icon="icon: warning; ratio: 0.8", uk-tooltip="Calculated with 'package-size'. Click for more info.")
                             //th Minified [kB]
-                            th.uk-text-right Gzipped
-                                |
+                            th.uk-text-right(onclick="sortTable(5)")
+                                span(uk-icon="triangle-up")
+                                span(uk-icon="triangle-down")
+                                | Gzipped
                                 |
                                 a(href="https://www.npmjs.com/package/package-size", target='_blank')
                                     span(uk-icon="icon: warning; ratio: 0.8", uk-tooltip="Calculated with 'package-size'. Click for more info.")
                             //th Gzipped [kB]
-                            th.uk-text-center Module Imports
+                            th.uk-text-center.sorted(onclick="sortTable(6)", ascending="false")
+                                span(uk-icon="triangle-up")
+                                span(uk-icon="triangle-down")
+                                | Module Imports
                     each val in dependencies
                         tr
                             td

@@ -103,17 +103,6 @@ if (argv.tar) {
 
 console.log("options", options);
 
-// process.exit();
-
-// let outputPath = "C:\\Users\\Paul\\WebstormProjects\\dependency-analyser\\dependency-analysis";
-// let sPath = "C:\\Users\\Paul\\Documents\\Git\\Uni Projects\\code-server\\src";
-// console.log("sPath", sPath);
-
 const dependencyAnalyser = new DependencyAnalyser(options);
-// dependencyAnalyser.initDtsCreator();
-// console.log("Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys())", Array.from(dependencyAnalyser.dtsCreator.dtsFileMap.keys()));
 dependencyAnalyser.scanAllFiles();
-// console.log(dependencyAnalyser.countService.importCounts);
-// console.log(dependencyAnalyser.countService.groupByFileName());
-// console.log(dependencyAnalyser.countService.groupByDependencyName());
 dependencyAnalyser.generateOutput();

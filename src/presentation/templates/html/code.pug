@@ -8,6 +8,7 @@ block scripts
             var urlParams = new URLSearchParams(queryString);
             var module = urlParams.get('module');
             var href = document.getElementById("moduleLink").href + "modules/" + module + ".html";
+
             document.getElementById("moduleLink").innerHTML = module;
             document.getElementById("moduleLink").href = href;
 
@@ -18,6 +19,7 @@ block scripts
             var plnChildren = children.filter(child => child.classList.contains("pln") || child.classList.contains("typ"));
             var importsArray = !{JSON.stringify(importsArray)};
             var usageArray = !{JSON.stringify(usageArray)};
+            var toTrim = [];
 
             // separate line breaks in code into own <span> elements, for better recognition
             plnChildren.forEach(child => {
@@ -28,15 +30,8 @@ block scripts
                     child.innerText = trimArray[0];
 
                     for (var i = lineBreakCount; i > 0; i--) {
-                        var span = document.createElement("span");
-                        span.innerText = trimArray[i];
-                        span.classList.add("pln");
-                        child.after(span);
-
-                        var newLineSpan = document.createElement("span");
-                        newLineSpan.innerText = "\n";
-                        newLineSpan.classList.add("pln");
-                        child.after(newLineSpan);
+                        addSpanAfter(child, trimArray[i]);
+                        addSpanAfter(child, "\n");
                     }
                 }
             });
@@ -86,7 +81,7 @@ block scripts
                                 }
 
                                 var hrefLink = "?module=" + module + "&imports=" + value.importSpecifiers[0];
-                                trimElement(child, value.importSpecifiers[0], hrefLink);
+                                toTrim.push([child, value.importSpecifiers[0], hrefLink]);
                             }
                         }
                     }
@@ -94,10 +89,12 @@ block scripts
             });
 
             // mark all usages
+
             usageArray.forEach(value => {
                 var lineCounter = 1;
 
                 children.forEach(child => {
+                    // if (!child.classList.contains('Z' + lineCounter)) child.classList.add('Z' + lineCounter);
                     lineCounter += (child.innerText.match(/\n/g) || []).length;
 
                     if (lineCounter === value.lineCount && isIncluded(child.innerText.trim(), value.identifierName)) {
@@ -116,10 +113,13 @@ block scripts
                         }
 
                         var hrefLink = "?module=" + module + "&imports=" + value.identifierName;
-                        trimElement(child, value.identifierName, hrefLink);
+                        toTrim.push([child, value.identifierName, hrefLink]);
                     }
                 });
             });
+
+            // trim all found and marked occurrences at once
+            toTrim.forEach(element => trimElement(element[0], element[1], element[2]));
 
             var countArray = !{JSON.stringify(countArray)};
             if (countArray) {
@@ -161,20 +161,21 @@ block scripts
                 var trimmedVal = child.innerText.split(name);
 
                 if (trimmedVal[0].length > 0) {
-                    var preSpan = document.createElement("span");
-                    preSpan.innerText = trimmedVal[0];
-                    preSpan.classList.add("pln");
-                    child.before(preSpan);
+                    addSpanAfter(child, trimmedVal[0]);
                 }
 
                 if (trimmedVal[1].length > 0) {
-                    var postSpan = document.createElement("span");
-                    postSpan.innerText = trimmedVal[1];
-                    postSpan.classList.add("pln");
-                    child.after(postSpan);
+                    addSpanAfter(child, trimmedVal[1]);
                 }
 
                 child.innerHTML = "<a href='" + hrefLink + "'>" + name + "</a>";
+            }
+
+            function addSpanAfter(element, content) {
+                var span = document.createElement("span");
+                span.innerHTML = content;
+                span.classList.add("pln");
+                element.after(span);
             }
 
             function isIncluded(a, b) {

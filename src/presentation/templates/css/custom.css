@@ -137,3 +137,15 @@ svg > g > g:last-child { pointer-events: none }
     right: 30px;
     z-index: 1;
 }
+
+th span[uk-icon^=triangle] {
+    display: none;
+}
+
+.sorted[ascending=true] span[uk-icon^=triangle-up] {
+    display: inline-block;
+}
+
+.sorted[ascending=false] span[uk-icon^=triangle-down] {
+    display: inline-block;
+}

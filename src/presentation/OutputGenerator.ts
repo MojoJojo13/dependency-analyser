@@ -217,11 +217,15 @@ export class OutputGenerator {
 
         function convertToKb(x: number): string {
             // return parseFloat((x / 1024).toFixed(x / 1024 < 0.1 ? 3 : 1));
-            return new Intl.NumberFormat(
-                Intl.NumberFormat().resolvedOptions().locale, {
-                    maximumFractionDigits: 1
-                }
-            ).format(x / 1024);
+            // return new Intl.NumberFormat(
+            //     Intl.NumberFormat().resolvedOptions().locale, {
+            //         maximumFractionDigits: 1
+            //     }
+            // ).format(x / 1024);
+            return (x / 1024).toLocaleString("en-US", {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            });
         }
 
         function getSizeOnDiskRek(dirPath: string) {
@@ -297,7 +301,8 @@ export class OutputGenerator {
         const importsArray = [];
         const usageArray = [];
         const countMap = new Map<string, number>();
-        const tempCountArr = [], countArray = [[""], [""]];
+        const tempCountArr = [];
+        const countArray = [[""], [""]];
 
         // prepare data to mark imports
         importCounts.forEach(importCount => {
