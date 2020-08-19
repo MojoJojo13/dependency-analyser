@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import * as fs from "fs";
-import {ExportScanner} from "./exportService";
 
 const options = {
     allowJs: true,
@@ -45,9 +44,6 @@ export class FileHandler {
                 false
             );
 
-            // printChildren(dtsFile)
-            let exportScanner = new ExportScanner();
-            exportScanner.scanFile(dtsFile);
         }
 
         // Emit the d.ts files

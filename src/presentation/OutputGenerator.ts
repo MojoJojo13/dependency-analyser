@@ -29,6 +29,9 @@ export class OutputGenerator {
         this.countService = countService;
     }
 
+    /**
+     *
+     */
     generateHTML(): void {
         const dependencyFileNameMap = this.countService.groupByFileName();
         const dependencyNameMap = this.countService.groupByDependencyName();

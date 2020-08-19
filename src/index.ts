@@ -101,6 +101,7 @@ if (argv.tar) {
 // check if the target directory is valid
 // TODO: check for directory
 
+
 console.log("options", options);
 
 const dependencyAnalyser = new DependencyAnalyser(options);

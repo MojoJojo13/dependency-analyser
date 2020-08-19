@@ -161,7 +161,7 @@ block scripts
                 var trimmedVal = child.innerText.split(name);
 
                 if (trimmedVal[0].length > 0) {
-                    addSpanAfter(child, trimmedVal[0]);
+                    addSpanAfter(child.previousSibling, trimmedVal[0]);
                 }
 
                 if (trimmedVal[1].length > 0) {

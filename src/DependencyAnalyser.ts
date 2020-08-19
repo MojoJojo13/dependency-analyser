@@ -3,34 +3,20 @@ import * as path from "path";
 import * as ts from "typescript";
 import {DtsCreator} from "./DtsCreator";
 import {ImportScanner} from "./importService";
-import {ExportScanner} from "./exportService";
 import {SourceFile} from "./exportDeclarations";
 import {CountService} from "./presentation/CountService";
 import {Options} from "./index";
 
+/**
+ * Root controller for this application.
+ */
 export class DependencyAnalyser {
-    get countService(): CountService {
-        return this._countService;
+    get dtsCreator(): DtsCreator {
+        return this._dtsCreator;
     }
 
-    set countService(value: CountService) {
-        this._countService = value;
-    }
-
-    get moduleSourceFileMap(): Map<string, SourceFile> {
-        return this._moduleSourceFileMap;
-    }
-
-    set moduleSourceFileMap(value: Map<string, SourceFile>) {
-        this._moduleSourceFileMap = value;
-    }
-
-    get importScannerMap(): Map<string, ImportScanner> {
-        return this._importScannerMap;
-    }
-
-    set importScannerMap(value: Map<string, ImportScanner>) {
-        this._importScannerMap = value;
+    set dtsCreator(value: DtsCreator) {
+        this._dtsCreator = value;
     }
 
     get allFiles(): string[] {
@@ -41,91 +27,109 @@ export class DependencyAnalyser {
         this._allFiles = value;
     }
 
-    // get isFile(): boolean {
-    //     return this._isFile;
-    // }
-    //
-    // set isFile(value: boolean) {
-    //     this._isFile = value;
-    // }
-    //
-    // get isDirectory(): boolean {
-    //     return this._isDirectory;
-    // }
-    //
-    // set isDirectory(value: boolean) {
-    //     this._isDirectory = value;
-    // }
-
-    get dtsCreator(): DtsCreator {
-        return this._dtsCreator;
+    get filesObject(): object {
+        return this._filesObject;
     }
 
-    set dtsCreator(value: DtsCreator) {
-        this._dtsCreator = value;
+    set filesObject(value: object) {
+        this._filesObject = value;
     }
 
-    private _path: string;
-    // private _isDirectory: boolean;
-    // private _isFile: boolean;
+    get importScannerMap(): Map<string, ImportScanner> {
+        return this._importScannerMap;
+    }
+
+    set importScannerMap(value: Map<string, ImportScanner>) {
+        this._importScannerMap = value;
+    }
+
+    get moduleSourceFileMap(): Map<string, SourceFile> {
+        return this._moduleSourceFileMap;
+    }
+
+    set moduleSourceFileMap(value: Map<string, SourceFile>) {
+        this._moduleSourceFileMap = value;
+    }
+
+    get countService(): CountService {
+        return this._countService;
+    }
+
+    set countService(value: CountService) {
+        this._countService = value;
+    }
+
+    get options(): Options {
+        return this._options;
+    }
+
+    set options(value: Options) {
+        this._options = value;
+    }
+
+    get packageJson(): object {
+        return this._packageJson;
+    }
+
+    set packageJson(value: object) {
+        this._packageJson = value;
+    }
+
     private _dtsCreator: DtsCreator;
     private _allFiles: string[];
-    // filesTree: Map<string, object>;
-    filesObject: object;
+    private _filesObject: object;
     private _importScannerMap: Map<string, ImportScanner>;
-    // private _moduleExportScannerMap: Map<string, ExportScanner>;
     private _moduleSourceFileMap: Map<string, SourceFile>;
     private _countService: CountService;
-    options: Options;
-    packageJson: object;
+    private _options: Options;
+    private _packageJson: object;
 
     constructor(options: Options) {
         this.options = options;
-        // this.moduleExportScannerMap = new Map<string, ExportScanner>();
+        this.countService = new CountService(this);
+
         this.moduleSourceFileMap = new Map<string, SourceFile>();
-        this._countService = new CountService(this);
 
         // read package.json
         this.packageJson = JSON.parse(fs.readFileSync(path.join(options.rootDir, "package.json"), "utf-8"));
 
-        const scanDir = options.scanDir;
+        // get all files to scan
+        const allFiles = this.getAllFiles(options.scanDir);
+        this.allFiles = allFiles.filesArray;
+        this.filesObject = allFiles.filesObject;
+    }
+
+    /**
+     * Scans the given given directory path and returns an object
+     * with all filtered Files as array and as an object tree.
+     * @param scanDir Path to a File or Directory to be scanned
+     */
+    getAllFiles(scanDir: string): { filesArray, filesObject } {
+        let options = this.options;
+        let filesArray: string[] = [];
+        let filesObject;
 
         if (fs.existsSync(scanDir)) {
             let lstatSync = fs.lstatSync(scanDir);
 
             if (lstatSync.isDirectory()) {
 
-                // this.isDirectory = true;
-                // this.allFiles = this.getAllFilesFlat(scanDir);
-                // this.filesTree = this.getAllFilesAsTree(scanDir);
-
-                const allFiles = this.getAllFiles(scanDir);
-                // console.log("getAllFiles", allFiles);
-                this.allFiles = allFiles.filesArray;
-                this.filesObject = allFiles.filesObject;
-
+                filesObject = getAllFilesRek(scanDir);
 
             } else if (lstatSync.isFile()) {
 
-                // handle only Typescript Files
-                if (path.extname(scanDir) === ".ts") {
-                    // this.isFile = true;
+                if (options.fileExtensionFilter.some(value => path.parse(scanDir).ext === value)) {
                     this.allFiles = [scanDir];
+                } else {
+                    console.error("The given file is not a .ts File: " + scanDir);
+                    process.exit(1);
                 }
 
             } else {
-                throw "not a file or a folder: " + scanDir;
+                console.error("Scan path is not a file nor a directory: " + scanDir);
+                process.exit(1);
             }
-        } else {
-            throw "not a valid srcPath: " + scanDir;
         }
-    }
-
-    getAllFiles(rootDirectory: string) {
-        let options = this.options;
-        let filesArray: string[] = [];
-
-        let filesObject = getAllFilesRek(rootDirectory);
 
         return {"filesArray": filesArray, "filesObject": filesObject};
 
@@ -147,8 +151,6 @@ export class DependencyAnalyser {
                         filesObj[fileName] = null;
                         filesArray.push(fileName);
                     }
-                } else {
-                    console.log("ERROR: not a File nor a Folder");
                 }
             });
 
@@ -156,11 +158,15 @@ export class DependencyAnalyser {
         }
     }
 
-    scanAllFiles() {
+    /**
+     * Scans all found files with ImportScanner
+     */
+    scanAllFiles(): void {
         this.importScannerMap = new Map<string, ImportScanner>();
 
         if (this.allFiles.length === 0) {
-            throw Error("No files to scan found!");
+            console.error("No files to scan found");
+            process.exit(1);
         }
 
         this.allFiles.forEach(fileName => {
@@ -175,75 +181,24 @@ export class DependencyAnalyser {
         });
     }
 
-    generateOutput() {
+    /**
+     * @link OutputGenerator#generateHTML
+     */
+    generateOutput(): void {
         this.countService.outputGenerator.generateHTML();
     }
 
-    // getAllFilesFlat(directory: string): string[] {
-    //     let filesArray: string[] = [];
-    //     let options = this.options;
-    //
-    //     getAllFilesFlatRek(directory);
-    //
-    //     return filesArray;
-    //
-    //     function getAllFilesFlatRek(directory: string): void {
-    //         let directoryItems = fs.readdirSync(directory);
-    //
-    //         if (options.exclude.some(value => {
-    //             let regEx = new RegExp(path.normalize(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-    //             return directory.match(regEx);
-    //         })) {
-    //             return;
-    //         }
-    //
-    //         directoryItems.forEach(value => {
-    //             const fileName = path.join(directory, value);
-    //             let lstatSync = fs.lstatSync(fileName);
-    //
-    //             if (lstatSync.isDirectory()) {
-    //                 getAllFilesFlatRek(fileName);
-    //             } else if (lstatSync.isFile()) {
-    //                 filesArray.push(fileName);
-    //             } else {
-    //                 console.log("ERROR: not a File nor a Folder");
-    //             }
-    //         })
-    //     }
-    // }
-
-    // getAllFilesAsTree(directory: string) {
-    //     return getAllFilesAsTreeRek(directory);
-    //
-    //     function getAllFilesAsTreeRek(directory: string) {
-    //         let directoryItems = fs.readdirSync(directory);
-    //         let filesArray = new Map<string, object>();
-    //
-    //         directoryItems.forEach(value => {
-    //             const fileName = path.join(directory, value);
-    //             let lstatSync = fs.lstatSync(fileName);
-    //
-    //             if (lstatSync.isDirectory()) {
-    //                 filesArray.set(fileName, getAllFilesAsTreeRek(fileName));
-    //             } else if (lstatSync.isFile()) {
-    //                 filesArray.set(fileName, null);
-    //             } else {
-    //                 console.log("ERROR: not a File nor a Folder");
-    //             }
-    //         });
-    //
-    //         return filesArray;
-    //     }
-    // }
-
+    /**
+     * @deprecated
+     * @param moduleName
+     */
     getModuleSourceFile(moduleName: string): SourceFile {
         let sourceFile: SourceFile = this.moduleSourceFileMap.get(moduleName);
 
         if (!sourceFile) {
-            let pathToModule = require.resolve(moduleName, {paths: [this.options.nodeModulesDir]});
+            let pathToModule = require.resolve(moduleName, {paths: [this._options.nodeModulesDir]});
             let dtsPath = pathToModule.replace(/\.js$/g, ".d.ts");
 
-            console.log("pathToModule", pathToModule);
             if (fs.existsSync(dtsPath)) {
 
                 const sourceFileTs = ts.createSourceFile(
@@ -257,65 +212,18 @@ export class DependencyAnalyser {
             } else {
                 console.error("moduleName", moduleName);
                 console.error("pathToModule", pathToModule);
-                //TODO: handle standard modules
                 return;
-                // throw Error("can't find .d.ts file");
             }
         }
-
-        console.log("-------------------");
 
         return sourceFile;
     }
 
+    /**
+     * @deprecated
+     */
     initDtsCreator() {
-        // console.log("this.allFiles", this.allFiles);
         this.dtsCreator = new DtsCreator(this.allFiles);
-        // this.dtsCreator.createExportService();
         this.dtsCreator.createSourceFiles();
-    }
-
-    // /**
-    //  * @deprecated
-    //  */
-    // getModuleExportScanner(moduleName: string): ExportScanner {
-    //     let exportScanner = this.moduleExportScannerMap.get(moduleName);
-    //
-    //     if (!exportScanner) {
-    //
-    //         let pathToModule = require.resolve(moduleName);
-    //         let dtsPath = pathToModule.replace(".js$", ".d.ts");
-    //
-    //         // console.log("pathToModule", pathToModule);
-    //         if (fs.existsSync(dtsPath)) {
-    //
-    //             const sourceFile = ts.createSourceFile(
-    //                 dtsPath, // fileName
-    //                 fs.readFileSync(dtsPath, 'utf8'), // sourceText
-    //                 ts.ScriptTarget.Latest, // languageVersion
-    //             );
-    //
-    //             exportScanner = new ExportScanner();
-    //             exportScanner.scanFile(sourceFile);
-    //
-    //             this.moduleExportScannerMap.set(moduleName, exportScanner);
-    //         } else {
-    //             console.error("moduleName", moduleName);
-    //             console.error("pathToModule", pathToModule);
-    //             //TODO: handle standard modules
-    //             return;
-    //             // throw Error("can't find .d.ts file");
-    //         }
-    //     }
-    //
-    //     return exportScanner;
-    // }
-
-    get path(): string {
-        return this._path;
-    }
-
-    set path(value: string) {
-        this._path = value;
     }
 }

@@ -1,48 +1,97 @@
 import * as ts from "typescript";
 import {Declaration, ImportDeclaration, RequireDeclaration} from "../Declarations";
 
-enum ImportKind {
-    Test
-}
+export class ImportCount {
+    get fileName(): string {
+        return this._fileName;
+    }
 
-interface Count {
+    set fileName(value: string) {
+        this._fileName = value;
+    }
 
-}
+    get importDeclaration(): ImportDeclaration | RequireDeclaration {
+        return this._importDeclaration;
+    }
 
-export class ImportCount implements Count {
-    fileName: string;
-    // dependencyName: string;
-    importDeclaration: ImportDeclaration | RequireDeclaration;
-    sourceFile: ts.SourceFile;
-    isNodeModule: boolean;
-    isCustomImport: boolean;
+    set importDeclaration(value: ImportDeclaration | RequireDeclaration) {
+        this._importDeclaration = value;
+    }
 
-    constructor(fileName: string, importDeclaration: ImportDeclaration | RequireDeclaration, sourceFile: ts.SourceFile, isNodeModule: boolean, isCustomImport: boolean) {
-        this.fileName = fileName;
-        // this.dependencyName = dependencyName;
-        this.importDeclaration = importDeclaration;
-        this.sourceFile = sourceFile;
-        this.isNodeModule = isNodeModule;
-        this.isCustomImport = isCustomImport;
+    get sourceFile(): ts.SourceFile {
+        return this._sourceFile;
+    }
+
+    set sourceFile(value: ts.SourceFile) {
+        this._sourceFile = value;
+    }
+
+    get isNodeModule(): boolean {
+        return this._isNodeModule;
+    }
+
+    set isNodeModule(value: boolean) {
+        this._isNodeModule = value;
+    }
+
+    private _fileName: string;
+    private _importDeclaration: ImportDeclaration | RequireDeclaration;
+    private _sourceFile: ts.SourceFile;
+    private _isNodeModule: boolean;
+
+    constructor(
+        fileName: string,
+        importDeclaration: ImportDeclaration | RequireDeclaration,
+        sourceFile: ts.SourceFile,
+        isNodeModule: boolean
+    ) {
+        this._fileName = fileName;
+        this._importDeclaration = importDeclaration;
+        this._sourceFile = sourceFile;
+        this._isNodeModule = isNodeModule;
     }
 
     get dependencyName() {
-        return this.importDeclaration.getModuleSpecifier();
+        return this._importDeclaration.getModuleSpecifier();
     }
 }
 
-export class UsageCount implements Count {
-    fileName: string;
-    importDeclaration: Declaration;
-    identifier: ts.Identifier;
+export class UsageCount {
+    get fileName(): string {
+        return this._fileName;
+    }
+
+    set fileName(value: string) {
+        this._fileName = value;
+    }
+
+    get importDeclaration(): Declaration {
+        return this._importDeclaration;
+    }
+
+    set importDeclaration(value: Declaration) {
+        this._importDeclaration = value;
+    }
+
+    get identifier(): ts.Identifier {
+        return this._identifier;
+    }
+
+    set identifier(value: ts.Identifier) {
+        this._identifier = value;
+    }
+
+    private _fileName: string;
+    private _importDeclaration: Declaration;
+    private _identifier: ts.Identifier;
 
     constructor(fileName: string, importDeclaration: Declaration, identifier: ts.Identifier) {
-        this.fileName = fileName;
-        this.importDeclaration = importDeclaration;
-        this.identifier = identifier;
+        this._fileName = fileName;
+        this._importDeclaration = importDeclaration;
+        this._identifier = identifier;
     }
 
     get dependencyName(): string {
-        return (<ImportDeclaration>this.importDeclaration).getModuleSpecifier();
+        return (<ImportDeclaration>this._importDeclaration).getModuleSpecifier();
     }
 }
