@@ -104,6 +104,6 @@ export class UsageCount {
      * Returns module name.
      */
     get dependencyName(): string {
-        return (<ImportDeclaration>this._importDeclaration).getModuleSpecifier();
+        return (this._importDeclaration as ImportDeclaration).getModuleSpecifier();
     }
 }

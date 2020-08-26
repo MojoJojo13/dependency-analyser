@@ -37,7 +37,7 @@ export class Declaration {
     getType() {
         if (this.node.kind === ts.SyntaxKind.FirstStatement) {
             // @ts-ignore
-            let declarations = this.node.declarationList.declarations;
+            const declarations = this.node.declarationList.declarations;
             return declarations[declarations.length - 1].type;
         }
 
@@ -59,7 +59,7 @@ export class Declaration {
 export class ImportDeclaration extends Declaration {
 
     get node(): ts.ImportDeclaration {
-        return <ts.ImportDeclaration>this._node;
+        return this._node as ts.ImportDeclaration;
     }
 
     set node(value: ts.ImportDeclaration) {
@@ -93,7 +93,7 @@ export class ImportDeclaration extends Declaration {
 
     getImportSpecifiers(): string[] {
         const importSpecifiers: string[] = [];
-        const importClause = <ts.ImportClause>this.node.importClause;
+        const importClause = this.node.importClause as ts.ImportClause;
 
         if (!importClause) return [];
 
@@ -103,12 +103,12 @@ export class ImportDeclaration extends Declaration {
 
         if (importClause.namedBindings) {
             // type NamedImportBindings = NamespaceImport | NamedImports;
-            let namedBindings = <ts.NamedImportBindings>importClause.namedBindings;
+            const namedBindings = importClause.namedBindings as ts.NamedImportBindings;
 
             if (ts.isNamespaceImport(namedBindings)) {
                 importSpecifiers.push(namedBindings.name.escapedText.toString());
             } else if (ts.isNamedImports(namedBindings)) {
-                (<ts.NamedImports>namedBindings).elements.forEach(value => importSpecifiers.push(value.name.escapedText.toString()));
+                (namedBindings as ts.NamedImports).elements.forEach(value => importSpecifiers.push(value.name.escapedText.toString()));
             }
         }
 
@@ -116,7 +116,7 @@ export class ImportDeclaration extends Declaration {
     }
 
     getModuleSpecifier(): string {
-        return <string>this.node.moduleSpecifier["text"];
+        return this.node.moduleSpecifier["text"] as string;
     }
 
 }
@@ -128,7 +128,7 @@ export class ImportDeclaration extends Declaration {
 export class RequireDeclaration extends Declaration {
 
     get node(): ts.VariableDeclaration {
-        return <ts.VariableDeclaration>this._node;
+        return this._node as ts.VariableDeclaration;
     }
 
     set node(value: ts.VariableDeclaration) {

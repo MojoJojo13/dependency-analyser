@@ -27,11 +27,11 @@ export abstract class Declaration {
     }
 
     getCountMemberMap(): Map<string, number> {
-        let countMap = new Map<string, number>();
+        const countMap = new Map<string, number>();
 
         Array.from(this.getMemberMap().values()).forEach(member => {
             member.forEach(declaration => {
-                let name = declaration.constructor.name;
+                const name = declaration.constructor.name;
                 countMap.set(name, countMap.get(name) + 1 || 1);
             });
 
@@ -72,9 +72,9 @@ export class SourceFile extends Declaration {
     }
 
     getMemberMap(): Map<string, Declaration[]> {
-        let memberMap: Map<string, Declaration[]> = new Map<string, Declaration[]>();
+        const memberMap: Map<string, Declaration[]> = new Map<string, Declaration[]>();
 
-        let exportAssignments = this.node.getChildren().filter(value => ts.isExportAssignment(value));
+        const exportAssignments = this.node.getChildren().filter(value => ts.isExportAssignment(value));
         if (exportAssignments.length > 0) {
             console.log("exportAssignments", exportAssignments);
         }
@@ -121,7 +121,7 @@ export class ClassDeclaration extends Declaration {
     node: ts.ClassDeclaration;
 
     getMemberMap(): Map<string, Declaration[]> {
-        let memberMap: Map<string, Declaration[]> = new Map<string, Declaration[]>();
+        const memberMap: Map<string, Declaration[]> = new Map<string, Declaration[]>();
 
         this.node.members.forEach(member => {
             handleNode(member, memberMap);
@@ -139,24 +139,24 @@ export class ModuleDeclaration extends Declaration {
     node: ts.ModuleDeclaration;
 
     getMemberMap(): Map<string, Declaration[]> {
-        let memberMap: Map<string, Declaration[]> = new Map<string, Declaration[]>();
-        let body = this.node.body;
+        const memberMap: Map<string, Declaration[]> = new Map<string, Declaration[]>();
+        const body = this.node.body;
 
         if (ts.isModuleBlock(body)) {
             // console.log("this.node", ();
 
-            (<ts.ModuleBlock>body).statements.forEach(statement => {
+            (body as ts.ModuleBlock).statements.forEach(statement => {
                 handleNode(statement, memberMap);
             })
 
         } else if (ts.isModuleDeclaration(body)) {
 
-            //TODO: handle this
+            // TODO: handle this
             set(memberMap, getNodeName(body), new ModuleDeclaration(body));
 
         } else {
             console.error(body);
-            throw `it's not a ModuleBlock: ${ts.SyntaxKind[body.kind]} (${body.kind})`;
+            throw new Error(`it's not a ModuleBlock: ${ts.SyntaxKind[body.kind]} (${body.kind})`);
         }
 
         return memberMap;
@@ -171,7 +171,7 @@ export class InterfaceDeclaration extends Declaration {
     node: ts.InterfaceDeclaration;
 
     getMemberMap(): Map<string, Declaration[]> {
-        let memberMap: Map<string, Declaration[]> = new Map<string, Declaration[]>();
+        const memberMap: Map<string, Declaration[]> = new Map<string, Declaration[]>();
 
         this.node.members.forEach(member => {
             handleNode(member, memberMap);
@@ -197,7 +197,7 @@ export class EnumDeclaration extends Declaration {
     node: ts.EnumDeclaration;
 
     getEnumMembersMap(): Map<string, EnumMember> {
-        let enumMap: Map<string, EnumMember> = new Map<string, EnumMember>();
+        const enumMap: Map<string, EnumMember> = new Map<string, EnumMember>();
 
         this.node.members.forEach(member => {
             enumMap.set(getNodeName(member), new EnumMember(member));
@@ -352,7 +352,7 @@ export class Type extends Declaration {
  * @deprecated
  */
 function _getMemberMap(node: ts.InterfaceDeclaration | ts.ClassDeclaration) {
-    let membersMap = new Map<string, Declaration[]>();
+    const membersMap = new Map<string, Declaration[]>();
 
     if (!node.members) {
         console.error("No members found!");
@@ -382,7 +382,7 @@ function _getMemberMap(node: ts.InterfaceDeclaration | ts.ClassDeclaration) {
             //     break;
             default:
                 console.error(value);
-                throw `unknown SyntaxKind: ${ts.SyntaxKind[value.kind]} (${value.kind})`;
+                throw new Error(`unknown SyntaxKind: ${ts.SyntaxKind[value.kind]} (${value.kind})`);
 
         }
     });
@@ -446,7 +446,7 @@ function handleNode(node: ts.Node, memberMap: Map<string, Declaration[]>) {
         case ts.SyntaxKind.FirstStatement:
 
             if (ts.isVariableStatement(node)) {
-                let declarationList = node.declarationList;
+                const declarationList = node.declarationList;
 
                 declarationList.declarations.forEach(variableDeclaration => {
                     set(memberMap, getNodeName(variableDeclaration), new VariableDeclaration(variableDeclaration));
@@ -459,7 +459,7 @@ function handleNode(node: ts.Node, memberMap: Map<string, Declaration[]>) {
         case ts.SyntaxKind.ExportAssignment:
             if (ts.isExportAssignment(node)) {
                 if (ts.isIdentifier(node.expression)) {
-                    let nameSpaceName = node.expression.escapedText.toString();
+                    const nameSpaceName = node.expression.escapedText.toString();
 
                 }
             }
@@ -478,7 +478,7 @@ function handleNode(node: ts.Node, memberMap: Map<string, Declaration[]>) {
 
         default:
             console.error(node);
-            throw `Unhandled SyntaxKind: ${ts.SyntaxKind[node.kind]} (${node.kind})`;
+            throw new Error(`Unhandled SyntaxKind: ${ts.SyntaxKind[node.kind]} (${node.kind})`);
     }
 }
 
@@ -489,7 +489,7 @@ function getNodeName(node: ts.Node): string {
     type NamedNode = ts.ClassDeclaration | ts.NamespaceDeclaration;
 
     let nameString: string;
-    let name = (node as NamedNode).name;
+    const name = (node as NamedNode).name;
 
     if (ts.isIdentifier(name)) {
         nameString = name.escapedText.toString();
@@ -497,12 +497,12 @@ function getNodeName(node: ts.Node): string {
         nameString = (name as ts.StringLiteral).text;
     } else {
         console.error(name);
-        throw "name is neither an Identifier nor a StringLiteral";
+        throw new Error("name is neither an Identifier nor a StringLiteral");
     }
 
     if (!nameString) {
         console.error(node);
-        throw "Node doesn't have a name!";
+        throw new Error("Node doesn't have a name!");
     }
 
     return nameString;
@@ -512,7 +512,7 @@ function getNodeName(node: ts.Node): string {
  * @deprecated
  */
 function set(memberMap: Map<string, Declaration[]>, key: string, value: Declaration): Map<string, Declaration[]> {
-    let declaration = memberMap.get(key);
+    const declaration = memberMap.get(key);
 
     if (Array.isArray(declaration)) {
         declaration.push(value);

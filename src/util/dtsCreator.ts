@@ -77,7 +77,7 @@ export class DtsCreator {
                 ts.ScriptTarget.Latest, // languageVersion
             );
 
-            let sourceFile = new SourceFile(srcFile);
+            const sourceFile = new SourceFile(srcFile);
 
             this.exportSourceFileMap.set(fileName, sourceFile);
         })

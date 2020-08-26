@@ -160,7 +160,7 @@ export class OutputGenerator {
         });
 
         // calculate sizes of  dependencies
-        let promisesArray = [];
+        const promisesArray = [];
 
         dependencyData.forEach(value => {
 
@@ -258,10 +258,10 @@ export class OutputGenerator {
          */
         function getSizeOnDiskRek(dirPath: string) {
             let size = 0;
-            let itemStats = fs.lstatSync(dirPath);
+            const itemStats = fs.lstatSync(dirPath);
 
             if (itemStats.isDirectory()) {
-                let allSubs = fs.readdirSync(dirPath);
+                const allSubs = fs.readdirSync(dirPath);
                 {
                     allSubs.forEach(sub => {
                         size += getSizeOnDiskRek(path.join(dirPath, sub));
@@ -281,10 +281,10 @@ export class OutputGenerator {
     private generateModules(dependencyName: string, importCountArray: ImportCount[]): any {
         const compiledFunction = pug.compileFile(path.join(__dirname, HTML_TEMPLATE_FILES.MODULE));
         const slashCount = (dependencyName.match(/\//g) || []).length;
-        const filesObject = this._countService.dependencyAnalyser.filesObject;
+        const files = this._countService.dependencyAnalyser.filesObject;
 
         // Prepare Data
-        const convertedData = fillUpData(filesObject, "details");
+        const convertedData = fillUpData(files, "details");
 
 
         // Render a set of data
@@ -292,15 +292,15 @@ export class OutputGenerator {
             title: 'Module: ' + dependencyName,
             moduleName: dependencyName,
             folder: '../'.repeat(slashCount + 1),
-            filesTree: convertedData,//convertedData,
+            filesTree: convertedData,// convertedData,
             date: this.date
         });
 
         /**
          * Recursively transforms the data for presentation of files.
          */
-        function fillUpData(filesObject, combinedPath: string): any {
-            let dataObj = {};
+        function fillUpData(filesObject: any, combinedPath: string): any {
+            const dataObj = {};
 
             Object.keys(filesObject).forEach((key) => {
                 const shortName = path.parse(key).base;
@@ -310,7 +310,7 @@ export class OutputGenerator {
                     dataObj[shortName].children = fillUpData(filesObject[key].children, path.join(combinedPath, shortName));
                 }
 
-                let usedImport = importCountArray.find(element => element.fileName === key);
+                const usedImport = importCountArray.find(element => element.fileName === key);
                 if (usedImport) {
 
                     dataObj[shortName].adds = {

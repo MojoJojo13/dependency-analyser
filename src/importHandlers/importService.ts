@@ -218,7 +218,7 @@ export class ImportScanner {
             // console.log("Can't handle this type of VariableDeclaration.Name, so skip it");
             // console.log(this.source.text.substring(declaration.pos, declaration.end));
             // console.log()
-            //TODO: handle arrays and tuples
+            // TODO: handle arrays and tuples
         }
     }
 
@@ -272,7 +272,7 @@ export class ImportScanner {
                             return;
                         }
 
-                        let importCount = new ImportCount(this.fileName, requireDeclaration, this.source, isNodeModule);
+                        const importCount = new ImportCount(this.fileName, requireDeclaration, this.source, isNodeModule);
                         this.dependencyAnalyser.countService.addImportCount(importCount);
 
                     } catch (err) {
@@ -324,7 +324,7 @@ function handleImportDeclaration(that: ImportScanner, node: ts.Node, sourceFile:
         // let sourceFile1 = this.dependencyAnalyser.getModuleSourceFile(importSpecifier);
         // importDeclaration.sourceFile = sourceFile1;
 
-        let importCount = new ImportCount(that.fileName, importDeclaration, sourceFile, isNodeModule);
+        const importCount = new ImportCount(that.fileName, importDeclaration, sourceFile, isNodeModule);
         that.dependencyAnalyser.countService.addImportCount(importCount);
 
         // importDeclaration.isDependency = true;
@@ -342,9 +342,9 @@ function handleImportDeclaration(that: ImportScanner, node: ts.Node, sourceFile:
         console.log("importDeclaration.getModuleSpecifier()", importDeclaration.getModuleSpecifier());
     }
 
-    importSpecifiers.forEach(function (value: string) {
+    importSpecifiers.forEach(value => {
         that.importMap.set(value, importDeclaration);
-    }.bind(this));
+    });
 
     function handleCustomImport() {
         const dtsFileName = path.join(path.dirname(that.fileName), importSpecifier) + ".d.ts";
@@ -382,9 +382,9 @@ function handleVariableDeclaration(
     variableDeclaration: ts.VariableDeclaration,
     variableMap: Map<string, Declaration>
 ) {
-    let name = variableDeclaration.name;
-    let type = variableDeclaration.type;
-    let initializer = variableDeclaration.initializer;
+    const name = variableDeclaration.name;
+    const type = variableDeclaration.type;
+    const initializer = variableDeclaration.initializer;
 
     let nameText: string;
     let typeKind: number;
@@ -394,10 +394,10 @@ function handleVariableDeclaration(
         typeKind = type.kind;
 
         if (ts.isTypeReferenceNode(type)) {
-            let typeName = type.typeName;
+            const typeName = type.typeName;
 
             if (ts.isIdentifier(typeName)) {
-                let typeNameText: string = typeName.escapedText.toString();
+                const typeNameText: string = typeName.escapedText.toString();
 
                 // track this variable if it's type is imported
                 checkTypeAndTrackVariable(typeNameText, nameText, variableDeclaration, variableMap);
@@ -417,10 +417,10 @@ function handleVariableDeclaration(
 
             if (ts.isTypeReferenceNode(type.elementType)) {
                 console.log("type.elementType", type.elementType);
-                let typeName = type.elementType.typeName;
+                const typeName = type.elementType.typeName;
 
                 if (ts.isIdentifier(typeName)) {
-                    let typeNameText: string = typeName.escapedText.toString();
+                    const typeNameText: string = typeName.escapedText.toString();
 
                     // track this variable if it's type is imported
                     checkTypeAndTrackVariable(typeNameText, nameText, variableDeclaration, variableMap);
@@ -441,24 +441,24 @@ function handleVariableDeclaration(
         initializerKind = initializer.kind;
 
         if (ts.isNewExpression(initializer)) {
-            let newExpression = <ts.NewExpression>initializer;
+            const newExpression = initializer as ts.NewExpression;
 
             if (ts.isIdentifier(newExpression.expression)) {
-                let identifier = <ts.Identifier>newExpression.expression;
-                let typeNameText = identifier.escapedText.toString();
+                const identifier = newExpression.expression as ts.Identifier;
+                const typeNameText = identifier.escapedText.toString();
 
                 // track this variable because it's a NewExpression of an imported type
                 checkTypeAndTrackVariable(typeNameText, nameText, variableDeclaration, variableMap);
             }
         } else if (ts.isPropertyAccessExpression(initializer)) {
-            let typeNameText = handlePropertyAccessExpression(<ts.PropertyAccessExpression>initializer, variableMap);
+            const typeNameText = handlePropertyAccessExpression(initializer as ts.PropertyAccessExpression, variableMap);
 
             if (typeNameText) {
                 // track if this is not an primitive type
                 checkTypeAndTrackVariable(typeNameText, nameText, variableDeclaration, variableMap);
             }
         } else if (ts.isCallExpression(initializer)) {
-            let typeNameText = handleCallExpression(<ts.CallExpression>initializer, variableMap);
+            const typeNameText = handleCallExpression(initializer as ts.CallExpression, variableMap);
 
             // track this variable if it's type is imported
             checkTypeAndTrackVariable(typeNameText, nameText, variableDeclaration, variableMap);
@@ -477,15 +477,15 @@ function handleCallExpression(
     callExpression: ts.CallExpression,
     variableMap: Map<string, Declaration>
 ): string {
-    let expression = callExpression.expression;
+    const expression = callExpression.expression;
 
     if (ts.isPropertyAccessExpression(expression)) {
         return handlePropertyAccessExpression(expression, variableMap);
     } else if (ts.isIdentifier(expression)) {
-        //TODO: look for declaration of this function and check the return type
+        // TODO: look for declaration of this function and check the return type
     } else {
         console.error(expression);
-        throw "callExpression.expression is not a PropertyAccessExpression";
+        throw new Error("callExpression.expression is not a PropertyAccessExpression");
     }
 }
 
@@ -496,30 +496,30 @@ function handlePropertyAccessExpression(
     propertyAccessExpression: ts.PropertyAccessExpression,
     variableMap: Map<string, Declaration>
 ): string {
-    let expression = propertyAccessExpression.expression;
-    let propertyName = propertyAccessExpression.name.escapedText.toString();
+    const expression = propertyAccessExpression.expression;
+    const propertyName = propertyAccessExpression.name.escapedText.toString();
 
     if (ts.isIdentifier(expression)) {
-        let identifier = <ts.Identifier>expression;
-        let name = identifier.escapedText.toString();
-        let externalVariable = variableMap.get(name);
+        const identifier = expression as ts.Identifier;
+        const name = identifier.escapedText.toString();
+        const externalVariable = variableMap.get(name);
 
         if (externalVariable) { // TODO: handle internal calls with external type return
             // Left side of property call is an external (object)
-            let typeName = externalVariable.reference || name;
+            const typeName = externalVariable.reference || name;
             return checkForPropertyCallOnImportedObject(typeName, propertyName, variableMap);
         }
 
     } else if (ts.isCallExpression(expression)) {
-        let typeName = handleCallExpression(expression, variableMap);
+        const typeName = handleCallExpression(expression, variableMap);
 
         if (typeName) {
             return checkForPropertyCallOnImportedObject(typeName, propertyName, variableMap);
         }
 
     } else if (ts.isNewExpression(expression)) {
-        let identifier = <ts.Identifier>expression.expression;
-        let typeNameText = identifier.escapedText.toString();
+        const identifier = expression.expression as ts.Identifier;
+        const typeNameText = identifier.escapedText.toString();
 
         return checkForPropertyCallOnImportedObject(typeNameText, propertyName, variableMap);
     } else if (ts.isElementAccessExpression(expression)) {
@@ -538,15 +538,15 @@ function checkForPropertyCallOnImportedObject(
     propertyName: string,
     variableMap: Map<string, Declaration>
 ) {
-    let type = <ImportDeclaration>variableMap.get(typeName);
+    const type = variableMap.get(typeName) as ImportDeclaration;
     let propertyReturnType: string;
-    let typeDeclarationArray = type.sourceFile.getMemberMap().get(typeName);
+    const typeDeclarationArray = type.sourceFile.getMemberMap().get(typeName);
 
     typeDeclarationArray.forEach(typeDeclaration => {
-        let propertyDeclarationArray = typeDeclaration.getMemberMap().get(propertyName);
+        const propertyDeclarationArray = typeDeclaration.getMemberMap().get(propertyName);
 
         propertyDeclarationArray.forEach(propertyDeclaration => {
-            let propertyDeclarationType = propertyDeclaration.getType();
+            const propertyDeclarationType = propertyDeclaration.getType();
 
             if (propertyDeclarationType) {
                 console.log("HERE IS A PROPERTY CALL ON AN IMPORTED TYPE", `<${typeName}>.${propertyName}`);
@@ -568,10 +568,10 @@ function checkTypeAndTrackVariable(
     node: ts.Node,
     variableMap: Map<string, Declaration>
 ) {
-    let variableReference = variableMap.get(typeNameText);
+    const variableReference = variableMap.get(typeNameText);
 
     if (variableReference) { // track variable
-        let declaration = new Declaration(node);
+        const declaration = new Declaration(node);
         declaration.reference = typeNameText;
         variableMap.set(nameText, declaration);
     }

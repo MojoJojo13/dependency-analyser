@@ -105,12 +105,12 @@ export class DependencyAnalyser {
      * @param scanDir Path to a File or Directory to be scanned
      */
     getAllFiles(scanDir: string): { filesArray, filesObject } {
-        let options = this.options;
-        let filesArray: string[] = [];
+        const options = this.options;
+        const filesArray: string[] = [];
         let filesObject;
 
         if (fs.existsSync(scanDir)) {
-            let lstatSync = fs.lstatSync(scanDir);
+            const lstatSync = fs.lstatSync(scanDir);
 
             if (lstatSync.isDirectory()) {
 
@@ -119,9 +119,9 @@ export class DependencyAnalyser {
             } else if (lstatSync.isFile()) {
 
                 if (options.fileExtensionFilter.some(value => path.parse(scanDir).ext === value)) {
-                    const filesObject = {};
-                    filesObject[scanDir] = null;
-                    return {"filesArray": [scanDir], "filesObject": filesObject};
+                    const _filesObject = {};
+                    _filesObject[scanDir] = null;
+                    return {"filesArray": [scanDir], "filesObject": _filesObject};
                 } else {
                     console.error("The given file is not a .ts File: " + scanDir);
                     process.exit(1);
@@ -149,7 +149,7 @@ export class DependencyAnalyser {
                     const children = getAllFilesRek(fileName);
                     filesObj[fileName] = children ? {children: children} : {};
                 } else if (lstatSync.isFile()) {
-                    if (options.fileExtensionFilter.some(value => path.parse(fileName).ext === value)) {
+                    if (options.fileExtensionFilter.some(fileExtension => path.parse(fileName).ext === fileExtension)) {
                         filesObj[fileName] = null;
                         filesArray.push(fileName);
                     }
@@ -178,7 +178,7 @@ export class DependencyAnalyser {
                 ts.ScriptTarget.Latest, // languageVersion
             );
 
-            let importScanner = new ImportScanner(this, fileName, sourceFile);
+            const importScanner = new ImportScanner(this, fileName, sourceFile);
             this.importScannerMap.set(fileName, importScanner);
         });
     }
@@ -197,8 +197,8 @@ export class DependencyAnalyser {
         let sourceFile: SourceFile = this.moduleSourceFileMap.get(moduleName);
 
         if (!sourceFile) {
-            let pathToModule = require.resolve(moduleName, {paths: [this._options.nodeModulesDir]});
-            let dtsPath = pathToModule.replace(/\.js$/g, ".d.ts");
+            const pathToModule = require.resolve(moduleName, {paths: [this._options.nodeModulesDir]});
+            const dtsPath = pathToModule.replace(/\.js$/g, ".d.ts");
 
             if (fs.existsSync(dtsPath)) {
 
