@@ -1,7 +1,7 @@
 {
   "name": "dependency-analyser",
   "version": "1.0.0",
-  "description": "",
+  "description": "Scan your Typescript project for imported and used dependencies and create a statistic as HTML output.",
   "main": "dist/src/index.js",
   "bin": {
     "dependency-analyser": "dist/src/index.js"
@@ -14,7 +14,7 @@
     "tsc": "tsc"
   },
   "keywords": [],
-  "author": "",
+  "author": "Paul Letkeman",
   "license": "ISC",
   "dependencies": {
     "@types/node": "^13.13.4",

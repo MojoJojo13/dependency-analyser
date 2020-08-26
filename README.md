@@ -1,4 +1,4 @@
-#dependency-analyser
+# dependency-analyser
 Scan your Typescript project for imported and used dependencies and create a statistic as HTML output.
 
 Statistics about imported dependencies and used node.js modules:
@@ -29,12 +29,12 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/imp
 const module = require("module"); // is not supported
 ```
 
-##Installing
+## Installing
 ```bash
 npm install dependency-analyser
 ```
 
-##Usage
+## Usage
 ```bash
 dependency-analyser [options]
 
@@ -47,7 +47,7 @@ Options:
   -h, --help  Show help                                                [boolean]
 ```
 
-##Examples
+## Examples
 ```bash
 dependency-analyser --root C:/User/Projects/your_project
 
