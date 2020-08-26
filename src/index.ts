@@ -2,7 +2,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as yargs from "yargs";
-import {DependencyAnalyser} from "./main/DependencyAnalyser";
+import {DependencyAnalyser} from "./main/dependencyAnalyser";
 
 export interface Options {
     rootDir: string,
@@ -35,11 +35,11 @@ const argv: { root?, tar?, scan? } = yargs
     }).option('scan', {
         alias: 's',
         type: 'string',
-        description: 'Directory to scan.'
+        description: 'Directory to scan. (absolute or relative to root)'
     }).option('tar', {
         alias: 't',
         type: 'string',
-        description: 'Target directory to put generated files into.'
+        description: 'Target directory to put generated files into. (absolute or relative to root)'
     })
     .alias('h', 'help')
     .showHelpOnFail(true)
@@ -53,8 +53,7 @@ if (argv.root) {
     const split = process.argv[1].split(NODE_MODULES);
 
     if (split.length < 2) {
-        console.error("Could not find the root folder. Please provide the root path in the arguments.");
-        process.exit(1);
+        throw new Error("Could not find the root folder. Please provide the root path in the arguments.");
     }
 
     options.rootDir = path.normalize(split[0]);
@@ -65,8 +64,7 @@ options.nodeModulesDir = path.join(options.rootDir, NODE_MODULES);
 
 // check if the determined directory exists
 if (!fs.existsSync(options.rootDir)) {
-    console.error("The provided root directory does not exist.", options.rootDir);
-    process.exit(1);
+    throw new Error("The provided root directory does not exist. " + options.rootDir);
 }
 
 // determine scan directory or file
@@ -82,8 +80,7 @@ if (argv.scan) {
 
 // check if the determined directory exists
 if (!fs.existsSync(options.scanDir)) {
-    console.error("The provided directory to scan does not exist.", options.scanDir);
-    process.exit(1);
+    throw new Error("The provided directory to scan does not exist. " + options.scanDir);
 }
 
 // determine target directory

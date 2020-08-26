@@ -1,6 +1,6 @@
 import * as chai from 'chai';
 import 'mocha';
-import {DependencyAnalyser} from "../../../../src/main/DependencyAnalyser";
+import {DependencyAnalyser} from "../../../../src/main/dependencyAnalyser";
 import {Options} from "../../../../src";
 
 const expect = chai.expect;

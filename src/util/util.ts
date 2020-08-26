@@ -7,7 +7,7 @@ export function printChildren(node, indent?: string) {
     indent = indent || "";
 
     node.forEachChild(child => {
-
+        /* tslint:disable:no-console */
         if (child.escapedText) {
             console.log(indent + "SyntaxKind:", child.kind + " " + ts.SyntaxKind[child.kind], "| EscapedText:", child.escapedText);
         } else if (child.text) {
@@ -15,7 +15,7 @@ export function printChildren(node, indent?: string) {
         } else {
             console.log(indent + "SyntaxKind:", child.kind + " " + ts.SyntaxKind[child.kind]);
         }
-
+        /* tslint:disable:no-console */
         printChildren(child, indent + "  ");
     })
 }

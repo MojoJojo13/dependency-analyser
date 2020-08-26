@@ -1,7 +1,8 @@
-import {ImportCount, UsageCount} from "./counter";
 import {OutputGenerator} from "./outputGenerator";
-import {DependencyAnalyser} from "../main/DependencyAnalyser";
+import {DependencyAnalyser} from "../main/dependencyAnalyser";
 import {Options} from "../index";
+import {ImportCount} from "./importCount";
+import {UsageCount} from "./usageCount";
 
 /**
  * Handles and contains all counts.
@@ -95,7 +96,6 @@ export class CountService {
 
     /**
      * Adds a UsageCount to the array.
-     * @param usageCount
      */
     addUsageCount(usageCount: UsageCount) {
         this.usageCounts.push(usageCount);

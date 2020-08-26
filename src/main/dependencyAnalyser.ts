@@ -1,9 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-import {DtsCreator} from "../util/dtsCreator";
 import {ImportScanner} from "../importHandlers/importService";
-import {SourceFile} from "../exportHandlers/exportDeclarations";
 import {CountService} from "../presentation/countService";
 import {Options} from "../index";
 
@@ -11,13 +9,6 @@ import {Options} from "../index";
  * Root controller for this application.
  */
 export class DependencyAnalyser {
-    get dtsCreator(): DtsCreator {
-        return this._dtsCreator;
-    }
-
-    set dtsCreator(value: DtsCreator) {
-        this._dtsCreator = value;
-    }
 
     get allFiles(): string[] {
         return this._allFiles;
@@ -41,14 +32,6 @@ export class DependencyAnalyser {
 
     set importScannerMap(value: Map<string, ImportScanner>) {
         this._importScannerMap = value;
-    }
-
-    get moduleSourceFileMap(): Map<string, SourceFile> {
-        return this._moduleSourceFileMap;
-    }
-
-    set moduleSourceFileMap(value: Map<string, SourceFile>) {
-        this._moduleSourceFileMap = value;
     }
 
     get countService(): CountService {
@@ -75,11 +58,9 @@ export class DependencyAnalyser {
         this._packageJson = value;
     }
 
-    private _dtsCreator: DtsCreator;
     private _allFiles: string[];
     private _filesObject: object;
     private _importScannerMap: Map<string, ImportScanner>;
-    private _moduleSourceFileMap: Map<string, SourceFile>;
     private _countService: CountService;
     private _options: Options;
     private _packageJson: object;
@@ -87,8 +68,6 @@ export class DependencyAnalyser {
     constructor(options: Options) {
         this.options = options;
         this.countService = new CountService(this);
-
-        this.moduleSourceFileMap = new Map<string, SourceFile>();
 
         // read package.json
         this.packageJson = JSON.parse(fs.readFileSync(path.join(options.rootDir, "package.json"), "utf-8"));
@@ -123,13 +102,11 @@ export class DependencyAnalyser {
                     _filesObject[scanDir] = null;
                     return {"filesArray": [scanDir], "filesObject": _filesObject};
                 } else {
-                    console.error("The given file is not a .ts File: " + scanDir);
-                    process.exit(1);
+                    throw new Error("The given file is not a .ts File: " + scanDir);
                 }
 
             } else {
-                console.error("Scan path is not a file nor a directory: " + scanDir);
-                process.exit(1);
+                throw new Error("Scan path is not a file nor a directory: " + scanDir);
             }
         }
 
@@ -167,8 +144,7 @@ export class DependencyAnalyser {
         this.importScannerMap = new Map<string, ImportScanner>();
 
         if (this.allFiles.length === 0) {
-            console.error("No files to scan found");
-            process.exit(1);
+            throw new Error("No files to scan found.");
         }
 
         this.allFiles.forEach(fileName => {
@@ -190,41 +166,4 @@ export class DependencyAnalyser {
         this.countService.outputGenerator.generateHTML();
     }
 
-    /**
-     * @deprecated
-     */
-    getModuleSourceFile(moduleName: string): SourceFile {
-        let sourceFile: SourceFile = this.moduleSourceFileMap.get(moduleName);
-
-        if (!sourceFile) {
-            const pathToModule = require.resolve(moduleName, {paths: [this._options.nodeModulesDir]});
-            const dtsPath = pathToModule.replace(/\.js$/g, ".d.ts");
-
-            if (fs.existsSync(dtsPath)) {
-
-                const sourceFileTs = ts.createSourceFile(
-                    dtsPath, // fileName
-                    fs.readFileSync(dtsPath, 'utf8'), // sourceText
-                    ts.ScriptTarget.Latest, // languageVersion
-                );
-
-                sourceFile = new SourceFile(sourceFileTs);
-                this.moduleSourceFileMap.set(moduleName, sourceFile);
-            } else {
-                console.error("moduleName", moduleName);
-                console.error("pathToModule", pathToModule);
-                return;
-            }
-        }
-
-        return sourceFile;
-    }
-
-    /**
-     * @deprecated
-     */
-    initDtsCreator() {
-        this.dtsCreator = new DtsCreator(this.allFiles);
-        this.dtsCreator.createSourceFiles();
-    }
 }

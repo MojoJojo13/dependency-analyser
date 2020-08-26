@@ -159,7 +159,7 @@ block content
                         tr
                             th Module
                             th NPM Repo
-                            th.uk-table-shrink Module Imports
+                            th.uk-text-center Module Imports
                     tbody
                         each val in nodeModules
                             tr
@@ -167,5 +167,5 @@ block content
                                     a(href='modules/' + val.name + '.html')=val.name
                                 td
                                     a(href='https://www.npmjs.com/package/' + val.name, target='_blank') npm
-                                td
+                                td.uk-text-center
                                     span.uk-badge=val.count

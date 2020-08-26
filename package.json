@@ -10,7 +10,7 @@
   "scripts": {
     "test": "mocha -r ts-node/register tests/**/*.test.ts",
     "coverage": "nyc -r lcov -e .ts -x \"*.test.ts\" npm run test",
-    "templates": "copyfiles src/presentation/templates/**/*.pug src/presentation/templates/**/*.js src/presentation/templates/**/*.css dist/",
+    "templates": "copyfiles src/presentation/templates/**/*.pug src/presentation/assets/**/*.js src/presentation/assets/**/*.css dist/",
     "tsc": "tsc"
   },
   "keywords": [],

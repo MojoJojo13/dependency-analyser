@@ -3,7 +3,8 @@ import * as getSizes from "package-size";
 import * as path from "path";
 import * as fs from "fs";
 import {CountService} from "./countService";
-import {ImportCount, UsageCount} from "./counter";
+import {ImportCount} from "./importCount";
+import {UsageCount} from "./usageCount";
 
 const HTML_TEMPLATE_FILES = {
     "INDEX": "templates/html/index.pug",
@@ -11,12 +12,12 @@ const HTML_TEMPLATE_FILES = {
     "CODE": "templates/html/code.pug"
 };
 
-const COMPLEMENT_FILES = [
-    "templates\\uikit\\uikit.min.css",
-    "templates\\uikit\\uikit.min.js",
-    "templates\\uikit\\uikit-icons.min.js",
-    "templates\\css\\custom.css",
-    "templates\\js\\run_prettify.js"
+const ASSETS = [
+    "assets\\uikit\\uikit.min.css",
+    "assets\\uikit\\uikit.min.js",
+    "assets\\uikit\\uikit-icons.min.js",
+    "assets\\css\\custom.css",
+    "assets\\js\\run_prettify.js"
 ];
 
 export class OutputGenerator {
@@ -47,7 +48,7 @@ export class OutputGenerator {
         this.date = new Date();
 
         this.cleanRootFolder();
-        this.createComplements();
+        this.createAssets();
 
         // create index file
         new Promise<any>(resolve => {
@@ -113,13 +114,13 @@ export class OutputGenerator {
     /**
      * Copies all marked templates to the target directory on the file system.
      */
-    private createComplements(): void {
+    private createAssets(): void {
         const targetDir = this._countService.dependencyAnalyser.options.targetDir;
 
-        COMPLEMENT_FILES.forEach(value => {
+        ASSETS.forEach(value => {
             const source = path.join(__dirname, value);
-            const destination = path.join(targetDir, path.parse(value).base);
-
+            const destination = path.join(targetDir, "assets", path.parse(value).base);
+            this.createFolder(path.join(targetDir, "assets"));
             fs.copyFileSync(source, destination);
         });
     }
@@ -285,7 +286,6 @@ export class OutputGenerator {
 
         // Prepare Data
         const convertedData = fillUpData(files, "details");
-
 
         // Render a set of data
         return compiledFunction({
