@@ -2,12 +2,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as yargs from "yargs";
-import {DependencyAnalyser} from "./DependencyAnalyser";
-
-console.log("__dirname", __dirname);
-console.log('process.argv', process.argv);
-
-// console.log('process.argv', process.argv.slice(2));
+import {DependencyAnalyser} from "./main/DependencyAnalyser";
 
 export interface Options {
     rootDir: string,
@@ -97,12 +92,6 @@ if (argv.tar) {
 } else {
     options.targetDir = path.join(options.rootDir, "dependency-analysis");
 }
-
-// check if the target directory is valid
-// TODO: check for directory
-
-
-console.log("options", options);
 
 const dependencyAnalyser = new DependencyAnalyser(options);
 dependencyAnalyser.scanAllFiles();

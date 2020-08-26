@@ -3,7 +3,7 @@ extends base.pug
 block scripts
     script.
         window.onload = function () {
-            Array.from(document.getElementsByClassName("caret")).forEach(function(value) {
+            Array.from(document.getElementsByClassName("caret")).forEach(function (value) {
                 value.addEventListener("click", function () {
                     this.parentElement.querySelector(".nested").classList.toggle("active");
                     this.classList.toggle("caret-down");

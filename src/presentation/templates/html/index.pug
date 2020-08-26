@@ -14,7 +14,6 @@ block scripts
                         var view = new google.visualization.DataView(data);
                         var chart = new google.visualization.PieChart(document.getElementById(value.elementId));
                         var options = {
-                            // legend: 'none',
                             title: value.title,
                             height: 300,
                             legend: {position: 'right', maxLines: 2},
@@ -100,41 +99,37 @@ block content
                 table#dependencyTable.uk-table.uk-table-divider.uk-table-hover.uk-table-small.uk-table-justify
                     thead
                         tr
-                            th(onclick="sortTable(0)")
+                            th.pointer(onclick="sortTable(0)")
                                 span(uk-icon="triangle-up")
                                 span(uk-icon="triangle-down")
                                 | Module
                             th NPM Repo
-                            th.uk-text-right(onclick="sortTable(2)")
+                            th.uk-text-right.pointer(onclick="sortTable(2)")
                                 span(uk-icon="triangle-up")
                                 span(uk-icon="triangle-down")
                                 | Size on Disk
-                            th.uk-text-right(onclick="sortTable(3)")
+                            th.uk-text-right.pointer(onclick="sortTable(3)")
                                 span(uk-icon="triangle-up")
                                 span(uk-icon="triangle-down")
                                 | Size
                                 |
                                 a(href="https://www.npmjs.com/package/package-size", target='_blank')
                                     span(uk-icon="icon: warning; ratio: 0.8", uk-tooltip="Calculated with 'package-size'. Click for more info.")
-                                // or info
-                            //th Size [kB]
-                            th.uk-text-right(onclick="sortTable(4)")
+                            th.uk-text-right.pointer(onclick="sortTable(4)")
                                 span(uk-icon="triangle-up")
                                 span(uk-icon="triangle-down")
                                 | Minified
                                 |
                                 a(href="https://www.npmjs.com/package/package-size", target='_blank')
                                     span(uk-icon="icon: warning; ratio: 0.8", uk-tooltip="Calculated with 'package-size'. Click for more info.")
-                            //th Minified [kB]
-                            th.uk-text-right(onclick="sortTable(5)")
+                            th.uk-text-right.pointer(onclick="sortTable(5)")
                                 span(uk-icon="triangle-up")
                                 span(uk-icon="triangle-down")
                                 | Gzipped
                                 |
                                 a(href="https://www.npmjs.com/package/package-size", target='_blank')
                                     span(uk-icon="icon: warning; ratio: 0.8", uk-tooltip="Calculated with 'package-size'. Click for more info.")
-                            //th Gzipped [kB]
-                            th.uk-text-center.sorted(onclick="sortTable(6)", ascending="false")
+                            th.uk-text-center.pointer.sorted(onclick="sortTable(6)", ascending="false")
                                 span(uk-icon="triangle-up")
                                 span(uk-icon="triangle-down")
                                 | Module Imports
@@ -146,8 +141,6 @@ block content
                                 else
                                     p=val.name
                             td
-                                //span(uk-icon='icon: forward')
-                                //a(href='https://www.npmjs.com/package/' + val.name, target='_blank')=val.sizeInfo.versionedName
                                 a(href='https://www.npmjs.com/package/' + val.name, target='_blank') npm
                             //td=val.sizeInfo.size
                             td.uk-text-right #{val.sizeInfo.sizeOnDisk} kB
@@ -173,7 +166,6 @@ block content
                                 td
                                     a(href='modules/' + val.name + '.html')=val.name
                                 td
-                                    //span(uk-icon='icon: forward')
                                     a(href='https://www.npmjs.com/package/' + val.name, target='_blank') npm
                                 td
                                     span.uk-badge=val.count

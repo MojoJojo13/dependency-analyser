@@ -149,3 +149,7 @@ th span[uk-icon^=triangle] {
 .sorted[ascending=false] span[uk-icon^=triangle-down] {
     display: inline-block;
 }
+
+.pointer {
+    cursor: pointer;
+}
