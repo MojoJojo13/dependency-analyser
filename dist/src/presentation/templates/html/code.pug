@@ -1,0 +1,213 @@
+extends base.pug
+
+block scripts
+    script(src=folder + 'assets/run_prettify.js')
+    script.
+        window.onload = function () {
+            var queryString = window.location.search;
+            var urlParams = new URLSearchParams(queryString);
+            var module = urlParams.get('module');
+            var href = document.getElementById("moduleLink").href + "modules/" + module + ".html";
+
+            document.getElementById("moduleLink").innerHTML = module;
+            document.getElementById("moduleLink").href = href;
+
+            // count and mark imports
+            var importsArr = urlParams.get("imports").split(",");
+            var codeElement = document.getElementsByClassName("prettyprinted")[0];
+            var children = Array.from(codeElement.children);
+            var plnChildren = children.filter(child => child.classList.contains("pln") || child.classList.contains("typ"));
+            var importsArray = !{JSON.stringify(importsArray)};
+            var usageArray = !{JSON.stringify(usageArray)};
+            var toTrim = [];
+
+            // separate line breaks in code into own <span> elements, for better recognition
+            plnChildren.forEach(child => {
+                var lineBreakCount = (child.innerText.match(/\n/g) || []).length;
+                if (lineBreakCount > 0 && importsArr.some(imprt => child.innerText.includes(imprt))) {
+                    var trimArray = child.innerText.split("\n");
+
+                    child.innerText = trimArray[0];
+
+                    for (var i = lineBreakCount; i > 0; i--) {
+                        addSpanAfter(child, trimArray[i]);
+                        addSpanAfter(child, "\n");
+                    }
+                }
+            });
+
+            // refresh children
+            children = Array.from(codeElement.children);
+
+            // mark all imports
+            importsArray.forEach(value => {
+                var lineCounter = 1;
+
+                children.forEach(child => {
+                    lineCounter += (child.innerText.match(/\n/g) || []).length;
+
+                    if (lineCounter <= value.lineCount) {
+                        if (child.innerText === '"' + value.moduleSpecifier + '"' ||
+                            child.innerText === "'" + value.moduleSpecifier + "'") {
+
+                            var hrefLink = "?module=" + module + "&imports=" + value.importSpecifiers.join(",");
+
+                            child.innerHTML = "<a href='" + hrefLink + "'>" + child.innerText + "</a>";
+                            child.classList.add("mark", "decent");
+                        } else if (!value.isEntireModuleImported) {
+
+                            value.importSpecifiers.forEach(importSpecifier => {
+
+                                if (importSpecifier === child.innerText.trim()) {
+
+                                    if (importsArr.some(value2 => value2 === importSpecifier)) {
+                                        child.classList.add('mark');
+                                    } else {
+                                        child.classList.add("mark", "decent");
+                                    }
+
+                                    var hrefLink = "?module=" + module + "&imports=" + importSpecifier;
+                                    trimElement(child, importSpecifier, hrefLink);
+                                }
+                            });
+                        } else if (value.isEntireModuleImported) {
+
+                            if (isIncluded(child.innerText.trim(), value.importSpecifiers[0])) {
+
+                                if (importsArr.some(value2 => value2 === value.importSpecifiers[0])) {
+                                    child.classList.add("mark");
+                                } else {
+                                    child.classList.add("mark", "decent");
+                                }
+
+                                var hrefLink = "?module=" + module + "&imports=" + value.importSpecifiers[0];
+                                toTrim.push([child, value.importSpecifiers[0], hrefLink]);
+                            }
+                        }
+                    }
+                });
+            });
+
+            // mark all usages
+
+            usageArray.forEach(value => {
+                var lineCounter = 1;
+
+                children.forEach(child => {
+                    // if (!child.classList.contains('Z' + lineCounter)) child.classList.add('Z' + lineCounter);
+                    lineCounter += (child.innerText.match(/\n/g) || []).length;
+
+                    if (lineCounter === value.lineCount && isIncluded(child.innerText.trim(), value.identifierName)) {
+                        if (!child.classList.contains('mark')) {
+                            if (importsArr.some(value1 => value1 === value.identifierName)) {
+                                child.classList.add('mark');
+
+                                // add counter to the line number
+                                var cLine = document.getElementById("cline" + lineCounter);
+                                var preVal = cLine.innerHTML;
+                                cLine.innerHTML = preVal !== "&nbsp;" ? (parseInt(preVal) + 1) + "x" : "1x";
+                                cLine.classList.add('cline-yes')
+                            } else {
+                                child.classList.add("mark", "decent");
+                            }
+                        }
+
+                        var hrefLink = "?module=" + module + "&imports=" + value.identifierName;
+                        toTrim.push([child, value.identifierName, hrefLink]);
+                    }
+                });
+            });
+
+            // trim all found and marked occurrences at once
+            toTrim.forEach(element => trimElement(element[0], element[1], element[2]));
+
+            var countArray = !{JSON.stringify(countArray)};
+            if (countArray) {
+                google.charts.load("current", {packages: ["corechart"]});
+                google.charts.setOnLoadCallback(drawChart);
+
+                function drawChart() {
+                    var data = google.visualization.arrayToDataTable(countArray);
+                    var view = new google.visualization.DataView(data);
+                    var chart = new google.visualization.BarChart(document.getElementById("barchart_values"));
+                    var options = {
+                        title: "Import Distribution",
+                        // width: 600,
+                        height: 100,
+                        bar: {groupWidth: "40%"},
+                        hAxis: {format: '0'},
+                        legend: {position: 'top', maxLines: 3},
+                        isStacked: true,
+                        series: (() => {
+                            var series = {};
+                            for (var i = 1, j = 0; i < countArray[0].length; i = i + 2, j++) {
+                                series[j] = {color: 'grey'};
+                                if (importsArr.some(imp => imp === countArray[0][i])) {
+                                    series[j] = {color: '#1e87f0'};
+                                }
+                            }
+                            return series;
+                        })()
+                    };
+                    chart.draw(view, options);
+                }
+            }
+
+            /**
+             * Moves all whitespaces to the previous and next element, for a better looking mark.
+             * Puts the element into a Link "<a href="hrefLink">child</a>"
+             */
+            function trimElement(child, name, hrefLink) {
+                var trimmedVal = child.innerText.split(name);
+
+                if (trimmedVal[0].length > 0) {
+                    addSpanAfter(child.previousSibling, trimmedVal[0]);
+                }
+
+                if (trimmedVal[1].length > 0) {
+                    addSpanAfter(child, trimmedVal[1]);
+                }
+
+                child.innerHTML = "<a href='" + hrefLink + "'>" + name + "</a>";
+            }
+
+            function addSpanAfter(element, content) {
+                var span = document.createElement("span");
+                span.innerHTML = content;
+                span.classList.add("pln");
+                element.after(span);
+            }
+
+            function isIncluded(a, b) {
+                if (a === b) {
+                    return true
+                } else if (a.match(new RegExp("^as\\s+" + b))) {
+                    return true;
+                }
+
+                return false;
+            }
+        }
+block content
+    ul.uk-breadcrumb
+        li
+            a(href=folder + 'index.html') Overview
+        li
+            a#moduleLink(href=folder)
+        li
+            span=shortFileName
+    a(href='#' uk-totop uk-scroll)#sticky-to-top
+    div#barchart_values
+    pre
+        table.coverage
+            - var i = 1, j = 1;
+            tr
+                td.line-count
+                    while i <= lineCount
+                        a(name='L' + i)
+                        a(href='#L' + i)=i++
+                td.line-coverage
+                    while j <= lineCount
+                        span(id="cline" + j++).cline-any &nbsp;
+                td
+                    pre.prettyprint.lang-js=sourceCode

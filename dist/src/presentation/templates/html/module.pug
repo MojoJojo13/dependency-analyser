@@ -1,0 +1,78 @@
+extends base.pug
+
+block scripts
+    script.
+        window.onload = function () {
+            Array.from(document.getElementsByClassName("caret")).forEach(function (value) {
+                value.addEventListener("click", function () {
+                    this.parentElement.querySelector(".nested").classList.toggle("active");
+                    this.classList.toggle("caret-down");
+                });
+            });
+
+            Array.from(document.getElementsByClassName("file-link")).forEach(function (value) {
+                if (value.parentElement.tagName === "LI") {
+                    openList(value.parentElement);
+                }
+            });
+
+            function openList(element) {
+                element.parentElement.classList.add("active");
+                element.classList.add("caret-down");
+
+                if (element.parentElement.parentElement.tagName === "LI") {
+                    openList(element.parentElement.parentElement);
+                }
+            }
+
+            // var chartData =
+            !{JSON.stringify(chartData)};
+            // if (chartData) {
+            //     google.charts.load("current", {packages: ["corechart"]});
+            //     google.charts.setOnLoadCallback(drawChart);
+            //
+            //     function drawChart() {
+            //         chartData.forEach(value => {
+            //             var data = google.visualization.arrayToDataTable(value.data);
+            //             var view = new google.visualization.DataView(data);
+            //             var chart = new google.visualization.PieChart(document.getElementById(value.elementId));
+            //             var options = {
+            //                 // legend: 'none',
+            //                 // title: 'My Daily Activities',
+            //                 height: 300,
+            //                 legend: {position: 'bottom', maxLines: 2},
+            //                 sliceVisibilityThreshold: .1,
+            //                 pieHole: 0.4,
+            //             }
+            //             chart.draw(view, options);
+            //         })
+            //     }
+            // }
+        }
+
+block content
+    ul.uk-breadcrumb
+        li
+            a(href=folder + 'index.html') Overview
+        li
+            span #{moduleName}
+    div#barchart_values
+
+    mixin buildTree(tree, isNested)
+        ul(class= isNested ? 'nested' : 'uk')
+            each val, key in tree
+                if val.children
+                    li
+                        span.caret= key
+                        +buildTree(val.children, true)
+                else
+                    if val.adds
+                        li
+                            a(href=val.adds.link).file-link= key
+                            |
+                            |
+                            span= '{ ' + val.adds.imports.join(', ') + ' }'
+                    else
+                        li= key
+
+    +buildTree(filesTree, false)

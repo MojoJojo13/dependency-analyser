@@ -1,0 +1,171 @@
+extends base.pug
+
+block scripts
+    script.
+        window.onload = function () {
+            var chartData = !{JSON.stringify(chartData)};
+            if (chartData) {
+                google.charts.load("current", {packages: ["corechart"]});
+                google.charts.setOnLoadCallback(drawChart);
+
+                function drawChart() {
+                    chartData.forEach(value => {
+                        var data = google.visualization.arrayToDataTable(value.data);
+                        var view = new google.visualization.DataView(data);
+                        var chart = new google.visualization.PieChart(document.getElementById(value.elementId));
+                        var options = {
+                            title: value.title,
+                            height: 300,
+                            legend: {position: 'right', maxLines: 2},
+                            sliceVisibilityThreshold: .1,
+                            pieHole: 0.4
+                        }
+                        chart.draw(view, options);
+                    });
+                }
+            }
+        }
+
+        var tableSettings = {
+            index: 6,
+            ascending: false
+        }
+
+        function compareFunction(index, a, b) {
+            var parseSize = (x) => parseFloat(x.innerHTML.replace(new RegExp('\,', 'g'), ''));
+            var parseCount = (x) => parseInt(x.children.item(0).innerHTML.toLowerCase());
+
+            switch (index) {
+                case 0:
+                    return a.innerHTML.toLowerCase() > b.innerHTML.toLowerCase();
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                    return parseSize(a) > parseSize(b);
+                case 6:
+                    return parseCount(a) > parseCount(b);
+            }
+        }
+
+        function sortTable(index) {
+            var table = document.getElementById("dependencyTable");
+            var rows = table.rows;
+            var switching = true;
+            var shouldSwitch;
+
+            rows[0].getElementsByTagName("TH")[tableSettings.index].classList.toggle("sorted");
+            rows[0].getElementsByTagName("TH")[index].classList.toggle("sorted");
+
+            rows[0].getElementsByTagName("TH")[tableSettings.index].removeAttribute("ascending");
+
+            tableSettings.ascending = tableSettings.index === index ? !tableSettings.ascending : true;
+            tableSettings.index = index;
+
+            rows[0].getElementsByTagName("TH")[index].setAttribute('ascending', tableSettings.ascending);
+
+            // Make a loop that will continue until no switching has been done:
+            while (switching) {
+                rows = table.rows;
+                switching = false;
+
+                // Loop through all table rows (except the first, which contains table headers):
+                for (var i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+
+                    var x = rows[i].getElementsByTagName("TD")[index];
+                    var y = rows[i + 1].getElementsByTagName("TD")[index];
+
+                    shouldSwitch = tableSettings.ascending ? compareFunction(index, x, y) : compareFunction(index, y, x);
+                    if (shouldSwitch) break;
+                }
+
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                }
+            }
+        }
+
+block content
+    .uk-grid-divider(class='uk-child-width-1-2@s', uk-grid='')
+        div#dependenciesChart
+        div#nodeModulesChart
+        //div#customModulesChart
+    ul(uk-accordion='multiple: true')
+        li.uk-open
+            a.uk-accordion-title(href='#') Dependencies
+            div.uk-accordion-content
+                table#dependencyTable.uk-table.uk-table-divider.uk-table-hover.uk-table-small.uk-table-justify
+                    thead
+                        tr
+                            th.pointer(onclick="sortTable(0)")
+                                span(uk-icon="triangle-up")
+                                span(uk-icon="triangle-down")
+                                | Module
+                            th NPM Repo
+                            th.uk-text-right.pointer(onclick="sortTable(2)")
+                                span(uk-icon="triangle-up")
+                                span(uk-icon="triangle-down")
+                                | Size on Disk
+                            th.uk-text-right.pointer(onclick="sortTable(3)")
+                                span(uk-icon="triangle-up")
+                                span(uk-icon="triangle-down")
+                                | Size
+                                |
+                                a(href="https://www.npmjs.com/package/package-size", target='_blank')
+                                    span(uk-icon="icon: warning; ratio: 0.8", uk-tooltip="Calculated with 'package-size'. Click for more info.")
+                            th.uk-text-right.pointer(onclick="sortTable(4)")
+                                span(uk-icon="triangle-up")
+                                span(uk-icon="triangle-down")
+                                | Minified
+                                |
+                                a(href="https://www.npmjs.com/package/package-size", target='_blank')
+                                    span(uk-icon="icon: warning; ratio: 0.8", uk-tooltip="Calculated with 'package-size'. Click for more info.")
+                            th.uk-text-right.pointer(onclick="sortTable(5)")
+                                span(uk-icon="triangle-up")
+                                span(uk-icon="triangle-down")
+                                | Gzipped
+                                |
+                                a(href="https://www.npmjs.com/package/package-size", target='_blank')
+                                    span(uk-icon="icon: warning; ratio: 0.8", uk-tooltip="Calculated with 'package-size'. Click for more info.")
+                            th.uk-text-center.pointer.sorted(onclick="sortTable(6)", ascending="false")
+                                span(uk-icon="triangle-up")
+                                span(uk-icon="triangle-down")
+                                | Module Imports
+                    each val in dependencies
+                        tr
+                            td
+                                if val.count > 0
+                                    a(href='modules/' + val.name + '.html')=val.name
+                                else
+                                    p=val.name
+                            td
+                                a(href='https://www.npmjs.com/package/' + val.name, target='_blank') npm
+                            //td=val.sizeInfo.size
+                            td.uk-text-right #{val.sizeInfo.sizeOnDisk} kB
+                            td.uk-text-right #{val.sizeInfo.sizeInKB} kB
+                            //td=val.sizeInfo.minified
+                            td.uk-text-right #{val.sizeInfo.minifiedInKB} kB
+                            //td=val.sizeInfo.gzipped
+                            td.uk-text-right #{val.sizeInfo.gzippedInKB} kB
+                            td.uk-text-center
+                                div(class= val.count > 0 ? "" : "uk-label-danger").uk-badge=val.count
+        li
+            a.uk-accordion-title(href='#') Node Modules
+            div.uk-accordion-content
+                table.uk-table.uk-table-divider.uk-table-hover.uk-table-small.uk-table-justify
+                    thead
+                        tr
+                            th Module
+                            th NPM Repo
+                            th.uk-text-center Module Imports
+                    tbody
+                        each val in nodeModules
+                            tr
+                                td
+                                    a(href='modules/' + val.name + '.html')=val.name
+                                td
+                                    a(href='https://www.npmjs.com/package/' + val.name, target='_blank') npm
+                                td.uk-text-center
+                                    span.uk-badge=val.count
